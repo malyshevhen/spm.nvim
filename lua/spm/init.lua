@@ -56,11 +56,7 @@ function M.init(user_config)
   local config, config_error = config_module.create(user_config)
   if not config then
     -- Use logger directly since it might not be configured yet
-    log(
-      logger.levels.ERROR,
-      'Configuration error: ' .. (config_error or 'Unknown error'),
-      'SimplePM'
-    )
+    logger.error('Configuration error: ' .. (config_error or 'Unknown error'), 'SimplePM')
     return false
   end
 

@@ -9,6 +9,12 @@ local LOG_LEVELS = {
   ERROR = 4,
 }
 
+---@class LoggerConfig
+---@field enabled boolean Whether to enable logging
+---@field level LogLevel The minimum log level to show
+---@field prefix string The prefix to add to all log messages
+---@field show_notifications boolean Whether to show vim.notify messages
+
 ---@type LoggerConfig
 local config = {
   enabled = true,
@@ -155,3 +161,4 @@ end
 M.levels = LOG_LEVELS
 
 return M
+
