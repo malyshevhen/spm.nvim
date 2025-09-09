@@ -1,23 +1,23 @@
 ---@class SimplePM
 local M = {}
 
-local config_module = require 'simple_pm.config'
-local plugin_manager = require 'simple_pm.plugin_manager'
-local toml_parser = require 'simple_pm.toml_parser'
-local pack_installer = require 'simple_pm.pack_installer'
-local file_sourcer = require 'simple_pm.file_sourcer'
-local keymap_compat = require 'simple_pm.keymap_compat'
-local logger = require 'simple_pm.logger'
-local crypto = require 'simple_pm.crypto'
-local lock_manager_module = require 'simple_pm.lock_manager'
+local config_module = require('spm.config')
+local plugin_manager = require('spm.plugin_manager')
+local toml_parser = require('spm.toml_parser')
+local pack_installer = require('spm.pack_installer')
+local file_sourcer = require('spm.file_sourcer')
+local keymap_compat = require('spm.keymap_compat')
+local logger = require('spm.logger')
+local crypto = require('spm.crypto')
+local lock_manager_module = require('spm.lock_manager')
 
 ---Sets up logging based on configuration
 ---@param config SimplePMConfig
 local function setup_logging(config)
-  logger.configure {
+  logger.configure({
     level = config.debug_mode and logger.levels.DEBUG or logger.levels.INFO,
     show_notifications = config.show_startup_messages,
-  }
+  })
   if config.debug_mode then
     logger.info('Debug mode enabled', 'SimplePM')
   end
@@ -40,10 +40,10 @@ local function create_plugin_manager()
     pack_installer = pack_installer,
     file_sourcer = file_sourcer,
     crypto = crypto,
-    lock_manager = lock_manager_module.new {
+    lock_manager = lock_manager_module.new({
       toml_parser = toml_parser,
       crypto = crypto,
-    },
+    }),
   }
   return plugin_manager.new(dependencies)
 end
@@ -104,7 +104,7 @@ end
 ---@param plugins_toml_path string? Path to plugins.toml file
 ---@return boolean success True if setup was successful
 function M.setup_debug(plugins_toml_path)
-  local config, config_error = config_module.create_debug { plugins_toml_path = plugins_toml_path }
+  local config, config_error = config_module.create_debug({ plugins_toml_path = plugins_toml_path })
   if not config then
     logger.error(
       'Debug setup configuration error: ' .. (config_error or 'Unknown error'),
@@ -132,18 +132,18 @@ local function create_user_commands()
   vim.api.nvim_create_user_command('SimplePMShowLogs', function()
     local history = logger.get_history()
     if #history == 0 then
-      print 'No SimplePM logs for this session.'
+      print('No SimplePM logs for this session.')
       return
     end
-    print '--- SimplePM Log History ---'
+    print('--- SimplePM Log History ---')
     for _, msg in ipairs(history) do
       print(msg)
     end
-    print '--- End of Log History ---'
+    print('--- End of Log History ---')
   end, { desc = 'Show the SimplePM log history for the current session.' })
 
   vim.api.nvim_create_user_command('SimplePMDebugPlugins', function()
-    local config_root = vim.fn.stdpath 'config'
+    local config_root = vim.fn.stdpath('config')
     local plugins_toml_path = config_root .. '/plugins.toml'
     local pm = create_plugin_manager()
     local plugins, error_msg = pm:debug_plugins(plugins_toml_path)
@@ -157,13 +157,13 @@ local function create_user_commands()
       logger.info('Keymap compatibility system is active', 'SimplePM')
       local K = keymap_compat.get_global()
       if K then
-        K:map {
+        K:map({
           {
             map = '<leader>test',
             cmd = ':echo "SimplePM test successful!"<CR>',
             desc = 'Test keymap',
           },
-        }
+        })
         logger.info('Test keymap created successfully', 'SimplePM')
       end
     else

@@ -1,8 +1,8 @@
 ---@class PluginManager
 local M = {}
 
-local logger = require 'simple_pm.logger'
-local plugin_types = require 'simple_pm.plugin_types'
+local logger = require('spm.logger')
+local plugin_types = require('spm.plugin_types')
 
 ---@class PluginManagerDependencies
 ---@field toml_parser table TOML parser implementation
@@ -22,7 +22,7 @@ PluginManager.__index = PluginManager
 ---@return PluginManager
 function M.new(dependencies)
   if not dependencies then
-    error 'PluginManager requires dependencies'
+    error('PluginManager requires dependencies')
   end
 
   local required_deps = {
@@ -40,7 +40,7 @@ function M.new(dependencies)
 
   local instance = setmetatable({
     dependencies = dependencies,
-    logger = logger.create_context 'PluginManager',
+    logger = logger.create_context('PluginManager'),
   }, PluginManager)
 
   return instance
@@ -55,7 +55,7 @@ function PluginManager:read_file(file_path)
   if not file then
     return nil, 'Cannot open file: ' .. tostring(err)
   end
-  local content = file:read '*a'
+  local content = file:read('*a')
   file:close()
   return content
 end
@@ -90,7 +90,7 @@ end
 ---@param config PluginConfig The plugin configuration
 ---@return PluginSpec[] flattened_plugins All plugins as individual entries
 function PluginManager:flatten_plugins(config)
-  self.logger.info 'Flattening plugin dependencies'
+  self.logger.info('Flattening plugin dependencies')
 
   local flattened = plugin_types.flatten_plugins(config)
 
@@ -104,7 +104,7 @@ end
 ---@return string? error Error message if installation fails
 function PluginManager:install_plugins(plugins)
   if #plugins == 0 then
-    self.logger.warn 'No plugins to install'
+    self.logger.warn('No plugins to install')
     return true, nil
   end
 
@@ -122,12 +122,12 @@ end
 ---@return boolean success True if sourcing was successful
 ---@return string? error Error message if sourcing fails
 function PluginManager:source_configs(config_root)
-  self.logger.info 'Sourcing configuration files'
+  self.logger.info('Sourcing configuration files')
 
   local success, error_msg = self.dependencies.file_sourcer.source_configs(config_root)
 
   if success then
-    self.logger.info 'Configuration files sourced successfully'
+    self.logger.info('Configuration files sourced successfully')
   else
     self.logger.error(error_msg or 'Configuration sourcing failed')
   end
@@ -139,7 +139,7 @@ end
 ---@param ls_config table Language server configuration
 function PluginManager:enable_language_servers(ls_config)
   if not ls_config or not ls_config.servers or #ls_config.servers == 0 then
-    self.logger.info 'No language servers to enable.'
+    self.logger.info('No language servers to enable.')
     return
   end
 
@@ -197,11 +197,11 @@ end
 ---@param filetypes_config table Filetype configuration
 function PluginManager:add_filetypes(filetypes_config)
   if not filetypes_config or not filetypes_config.pattern then
-    self.logger.info 'No custom filetypes to add.'
+    self.logger.info('No custom filetypes to add.')
     return
   end
 
-  self.logger.info 'Adding custom filetype mappings.'
+  self.logger.info('Adding custom filetype mappings.')
   local success, err = pcall(vim.filetype.add, filetypes_config)
   if not success then
     self.logger.error('Failed to add filetypes: ' .. tostring(err))
@@ -214,7 +214,7 @@ end
 ---@return boolean success True if the entire process was successful
 ---@return string? error Error message if any step fails
 function PluginManager:setup(config, force_reinstall)
-  self.logger.info '--- Starting PluginManager Setup ---'
+  self.logger.info('--- Starting PluginManager Setup ---')
 
   local plugins_toml_content, read_err = self:read_file(config.plugins_toml_path)
   if not plugins_toml_content then
@@ -233,7 +233,7 @@ function PluginManager:setup(config, force_reinstall)
   local filetypes_config
 
   if not force_reinstall and not is_stale and lock_data and lock_data.plugins then
-    self.logger.info 'Lock file is up to date. Verifying plugins from lock file.'
+    self.logger.info('Lock file is up to date. Verifying plugins from lock file.')
     flattened_plugins = lock_data.plugins
     language_servers_config = lock_data.language_servers
     filetypes_config = lock_data.filetypes
@@ -244,14 +244,14 @@ function PluginManager:setup(config, force_reinstall)
       or not language_servers_config.servers
       or #language_servers_config.servers == 0
     then
-      self.logger.warn 'Language servers config corrupted in lock file, reparsing TOML'
+      self.logger.warn('Language servers config corrupted in lock file, reparsing TOML')
       local parsed_config, parse_error = self:parse_config(config.plugins_toml_path)
       if parsed_config and parsed_config.language_servers then
         language_servers_config = parsed_config.language_servers
       end
     end
   else
-    self.logger.info 'Lock file is stale or missing. Installing/updating plugins.'
+    self.logger.info('Lock file is stale or missing. Installing/updating plugins.')
     local parsed_config, parse_error = self:parse_config(config.plugins_toml_path)
     if not parsed_config then
       return false, parse_error
@@ -263,7 +263,7 @@ function PluginManager:setup(config, force_reinstall)
 
   self.logger.debug(
     'Using plugin_config: '
-      .. vim.inspect { plugins = flattened_plugins, language_servers = language_servers_config }
+      .. vim.inspect({ plugins = flattened_plugins, language_servers = language_servers_config })
   )
 
   local log_message = string.format('Verifying and loading %d plugins...', #flattened_plugins)
@@ -274,13 +274,13 @@ function PluginManager:setup(config, force_reinstall)
   self.logger.info(log_message)
   local install_success, install_error = self:install_plugins(flattened_plugins)
   if not install_success then
-    self.logger.error 'Plugin setup failed during install/verify step.'
+    self.logger.error('Plugin setup failed during install/verify step.')
     return false, install_error
   end
-  self.logger.info 'Successfully verified and loaded all plugins.'
+  self.logger.info('Successfully verified and loaded all plugins.')
 
   if force_reinstall or is_stale then
-    self.logger.info 'Updating lock file now.'
+    self.logger.info('Updating lock file now.')
     local new_hash = self.dependencies.crypto.generate_hash(plugins_toml_content)
 
     local plugin_names = {}
@@ -322,13 +322,13 @@ function PluginManager:setup(config, force_reinstall)
     if not ok then
       self.logger.error('Failed to write lock file: ' .. (write_err or 'unknown error'))
     else
-      self.logger.info 'Lock file successfully written.'
+      self.logger.info('Lock file successfully written.')
     end
   else
-    self.logger.info 'Lock file is up to date. No update needed.'
+    self.logger.info('Lock file is up to date. No update needed.')
   end
 
-  self.logger.info 'Sourcing user configuration files.'
+  self.logger.info('Sourcing user configuration files.')
   local source_success, source_error = self:source_configs(config.config_root)
   if not source_success then
     return false, source_error
@@ -337,7 +337,7 @@ function PluginManager:setup(config, force_reinstall)
   self:add_filetypes(filetypes_config)
   self:enable_language_servers(language_servers_config)
 
-  self.logger.info '--- PluginManager Setup Finished ---'
+  self.logger.info('--- PluginManager Setup Finished ---')
   return true, nil
 end
 

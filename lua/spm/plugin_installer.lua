@@ -1,9 +1,9 @@
 ---@class PluginInstaller
 local M = {}
 
-local plugin_types = require 'simple_pm.plugin_types'
-local toml_parser = require 'simple_pm.toml_parser'
-local keymap = require 'simple_pm.keymap'
+local plugin_types = require('spm.plugin_types')
+local toml_parser = require('spm.toml_parser')
+local keymap = require('spm.keymap')
 
 ---Converts a plugin spec to vim.pack format
 ---@param plugin PluginSpec The plugin to convert
@@ -118,7 +118,7 @@ end
 ---Main function to install plugins and source configuration
 ---@param plugins_toml_path string? Path to plugins.toml (defaults to config_root/plugins.toml)
 function M.install_and_configure(plugins_toml_path)
-  local config_root = vim.fn.stdpath 'config'
+  local config_root = vim.fn.stdpath('config')
   plugins_toml_path = plugins_toml_path or (config_root .. '/plugins.toml')
 
   -- Check if plugins.toml exists
@@ -162,7 +162,7 @@ end
 ---Debug function to show parsed plugins without installing
 ---@param plugins_toml_path string? Path to plugins.toml
 function M.debug_plugins(plugins_toml_path)
-  local config_root = vim.fn.stdpath 'config'
+  local config_root = vim.fn.stdpath('config')
   plugins_toml_path = plugins_toml_path or (config_root .. '/plugins.toml')
 
   local success, config = pcall(toml_parser.parse_plugins_toml, plugins_toml_path)
@@ -196,7 +196,7 @@ function M.test_keymaps()
     {
       map = '<leader>tf',
       cmd = function()
-        print 'Function keymap works!'
+        print('Function keymap works!')
       end,
       desc = 'Test function keymap',
     },

@@ -1,8 +1,8 @@
 ---@class TomlParser
 local M = {}
 
-local toml = require 'simple_pm.vendor.toml'
-local logger = require 'simple_pm.logger'
+local toml = require('spm.vendor.toml')
+local logger = require('spm.logger')
 
 ---Safely parses TOML content using the vendor toml.lua library
 ---@param content string The TOML content to parse
@@ -21,7 +21,7 @@ end
 ---@return table parsed The parsed TOML data
 function M.parse(content)
   if type(content) ~= 'string' then
-    error 'TOML content must be a string'
+    error('TOML content must be a string')
   end
 
   if content == '' then
@@ -42,7 +42,7 @@ end
 ---@return table parsed The parsed TOML data
 function M.parse_file(filepath)
   if type(filepath) ~= 'string' then
-    error 'File path must be a string'
+    error('File path must be a string')
   end
 
   -- Check if file exists and is readable
@@ -56,7 +56,7 @@ function M.parse_file(filepath)
     error(string.format('Cannot open file: %s', filepath))
   end
 
-  local content = file:read '*all'
+  local content = file:read('*all')
   file:close()
 
   if not content then
@@ -147,7 +147,7 @@ function M.validate_file(filepath)
     return false, string.format('Cannot open file: %s', filepath)
   end
 
-  local content = file:read '*all'
+  local content = file:read('*all')
   file:close()
 
   if not content then
@@ -162,7 +162,7 @@ end
 ---@return string toml_content The TOML representation
 function M.encode(tbl)
   if type(tbl) ~= 'table' then
-    error 'Input must be a table'
+    error('Input must be a table')
   end
 
   local success, result = pcall(toml.encode, tbl)
@@ -188,7 +188,7 @@ end
 ---@param strict boolean Whether to enable strict mode
 function M.set_strict_mode(strict)
   if type(strict) ~= 'boolean' then
-    error 'Strict mode must be a boolean'
+    error('Strict mode must be a boolean')
   end
 
   if toml.strict ~= nil then

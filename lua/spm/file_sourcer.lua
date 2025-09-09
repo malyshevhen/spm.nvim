@@ -1,7 +1,7 @@
 ---@class FileSourer
 local M = {}
 
-local logger = require 'simple_pm.logger'
+local logger = require('spm.logger')
 
 ---@class FileSourcerOptions
 ---@field enable_plugins boolean Whether to source plugins configuration

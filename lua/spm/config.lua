@@ -14,12 +14,12 @@ local M = {}
 ---@type SimplePMConfig
 local DEFAULT_CONFIG = {
   plugins_toml_path = nil, -- Will be set to config_root/plugins.toml if nil
-  lock_file_path = vim.fn.stdpath 'data' .. '/simple_pm.lock',
+  lock_file_path = vim.fn.stdpath('data') .. '/spm.lock',
   auto_source_configs = true,
   auto_setup_keymaps = true,
   show_startup_messages = false,
   debug_mode = false,
-  config_root = vim.fn.stdpath 'config',
+  config_root = vim.fn.stdpath('config'),
 }
 
 ---Simple validation for configuration object
@@ -79,7 +79,7 @@ local function resolve_config(config)
   end
 
   if not resolved.lock_file_path then
-    resolved.lock_file_path = vim.fn.stdpath 'data' .. '/simple_pm.lock'
+    resolved.lock_file_path = vim.fn.stdpath('data') .. '/spm.lock'
   end
 
   return resolved
@@ -139,12 +139,12 @@ end
 ---@return SimplePMConfig? config The minimal configuration
 ---@return string? error Error message if validation fails
 function M.create_minimal(plugins_toml_path)
-  return M.create {
+  return M.create({
     plugins_toml_path = plugins_toml_path,
     debug_mode = false,
     auto_source_configs = true,
     auto_setup_keymaps = true,
-  }
+  })
 end
 
 ---Gets the default configuration (for reference/documentation)
@@ -154,4 +154,3 @@ function M.get_defaults()
 end
 
 return M
-

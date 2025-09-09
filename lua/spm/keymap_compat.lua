@@ -2,8 +2,8 @@
 ---Compatibility layer for existing K:map interface
 local M = {}
 
-local keymap = require 'simple_pm.keymap'
-local logger = require 'simple_pm.logger'
+local keymap = require('spm.keymap')
+local logger = require('spm.logger')
 
 ---@class CompatKeymapStore
 ---Compatibility wrapper that mimics the old K:map interface

@@ -1,7 +1,7 @@
 ---@class PackInstaller
 local M = {}
 
-local logger = require 'simple_pm.logger'
+local logger = require('spm.logger')
 
 ---@class PackInstallerOptions
 ---@field confirm boolean Whether to ask user to confirm installation
@@ -55,7 +55,7 @@ end
 ---@return boolean success True if installation was successful
 ---@return string? error Error message if installation fails
 local function install_with_git(plugins)
-  local pack_dir = vim.fn.stdpath 'data' .. '/site/pack/simple_pm/start'
+  local pack_dir = vim.fn.stdpath('data') .. '/site/pack/spm/start'
 
   -- Create pack directory if it doesn't exist
   vim.fn.mkdir(pack_dir, 'p')
