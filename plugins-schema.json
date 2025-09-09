@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/malyshevhen/nvim-plugins-schema",
+  "title": "Neovim Plugins Configuration Schema",
+  "description": "JSON schema for plugins.toml file structure used by Neovim plugin manager",
+  "type": "object",
+  "properties": {
+    "plugins": {
+      "type": "array",
+      "description": "Array of plugin configurations",
+      "items": {
+        "$ref": "#/definitions/plugin"
+      }
+    },
+    "language_servers": {
+      "type": "object",
+      "description": "Configuration for language servers to be enabled.",
+      "properties": {
+        "servers": {
+          "type": "array",
+          "description": "A list of LSP server names to enable.",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "filetypes": {
+      "type": "object",
+      "description": "Configuration for custom filetype mappings.",
+      "properties": {
+        "pattern": {
+          "type": "object",
+          "description": "A map of file patterns to filetypes.",
+          "propertyNames": {
+            "type": "string",
+            "description": "A glob pattern for a filename."
+          },
+          "additionalProperties": {
+            "type": "string",
+            "description": "The filetype to assign."
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "plugins"
+  ],
+  "definitions": {
+    "plugin": {
+      "type": "object",
+      "description": "Configuration for a single plugin",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Optional human-readable name for the plugin",
+          "pattern": "^[a-zA-Z0-9._-]+$"
+        },
+        "src": {
+          "type": "string",
+          "description": "Full URL to the plugin repository",
+          "format": "uri",
+          "pattern": "^https://.+$"
+        },
+        "version": {
+          "type": "string",
+          "description": "String to use specific branch, tag, or commit hash.",
+          "examples": [
+            "master",
+            "main",
+            "v1.0.0",
+            "stable"
+          ]
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "List of dependency plugin URLs",
+          "items": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://.+$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "src"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "plugins": [
+        {
+          "name": "alpha-nvim",
+          "src": "https://github.com/goolord/alpha-nvim"
+        },
+        {
+          "name": "neotest",
+          "src": "https://github.com/nvim-neotest/neotest",
+          "dependencies": [
+            "https://github.com/nvim-lua/plenary.nvim"
+          ]
+        }
+      ],
+      "language_servers": {
+        "servers": [
+          "lua_ls",
+          "gopls"
+        ]
+      },
+      "filetypes": {
+        "pattern": {
+          "*.raml": "raml",
+          "docker-compose%.yml": "yaml.docker-compose"
+        }
+      }
+    }
+  ]
+}
