@@ -36,12 +36,6 @@ local VIM_LOG_LEVELS = {
 local Logger = {}
 Logger.__index = Logger
 
-function Logger.new()
-  return setmetatable({
-    config = config,
-  }, Logger)
-end
-
 ---Formats a log message with prefix and context
 ---@param level LogLevel The log level
 ---@param message string The message to log
@@ -72,14 +66,14 @@ end
 ---@param message string The message to log
 ---@param context string? Optional context information
 local function log(level, message, context)
-  if not config.enabled then
+  if not config.enabled or level < config.level then
     return
   end
 
   local formatted = format_message(level, message, context)
   table.insert(log_history, formatted)
 
-  if level < config.level or not config.show_notifications then
+  if not config.show_notifications then
     return
   end
 

@@ -24,36 +24,6 @@ function KeymapSpec:validate()
     return false, "Keymap must have a 'cmd' field of type string or function"
   end
 
-  if self.desc and type(self.desc) ~= 'string' then
-    return false, "Keymap 'desc' must be a string"
-  end
-
-  if self.mode then
-    if type(self.mode) == 'string' then
-      -- Single mode is ok
-    elseif type(self.mode) == 'table' then
-      ---@type table<string>
-      ---@diagnostic disable-next-line: assign-type-mismatch
-      local modes = self.mode
-      -- Array of modes - validate each
-      for _, mode in ipairs(modes) do
-        if type(mode) ~= 'string' then
-          return false, "All modes in 'mode' array must be strings"
-        end
-      end
-    else
-      return false, "Keymap 'mode' must be a string or array of strings"
-    end
-  end
-
-  if self.ft and type(self.ft) ~= 'string' then
-    return false, "Keymap 'ft' must be a string"
-  end
-
-  if self.opts and type(self.opts) ~= 'table' then
-    return false, "Keymap 'opts' must be a table"
-  end
-
   return true, nil
 end
 
@@ -83,12 +53,7 @@ function KeymapSpec:set_single_keymap()
     vim.api.nvim_create_autocmd('FileType', {
       pattern = self.ft,
       callback = function(args)
-        vim.keymap.set(
-          mode,
-          self.map,
-          self.cmd,
-          vim.tbl_extend('force', opts, { buffer = args.buf })
-        )
+        vim.keymap.set(mode, self.map, self.cmd, vim.tbl_extend('force', opts, { buffer = args.buf }))
       end,
       desc = string.format('Set keymap %s for filetype %s', self.map, self.ft),
     })
@@ -105,27 +70,21 @@ end
 ---@return number success_count Number of successfully set keymaps
 ---@return number total_count Total number of keymaps attempted
 local function map(keymaps)
-  local success_count = 0
-  local total_count = 0
+  if not keymaps then
+    return 0, 0
+  end
 
-  -- Handle single keymap or array of keymaps
-  if keymaps.map then
-    -- Single keymap (has .map field)
-    total_count = 1
-    if keymaps:set_single_keymap() then
-      success_count = 1
-    end
-  else
-    -- Array of keymaps
-    for _, keymap in ipairs(keymaps) do
-      total_count = total_count + 1
-      if keymap:set_single_keymap() then
-        success_count = success_count + 1
-      end
+  local keymap_list = type(keymaps) == 'table' and keymaps.map and { keymaps } or keymaps
+
+  local success_count = 0
+  for _, keymap in ipairs(keymap_list) do
+    setmetatable(keymap, KeymapSpec)
+    if keymap:set_single_keymap() then
+      success_count = success_count + 1
     end
   end
 
-  return success_count, total_count
+  return success_count, #keymap_list
 end
 
 return {

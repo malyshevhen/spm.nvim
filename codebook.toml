@@ -1,6 +1,7 @@
 words = [
     "keymap",
     "keymaps",
+    "nodoc",
     "reparsing",
     "sourcer",
     "spm",

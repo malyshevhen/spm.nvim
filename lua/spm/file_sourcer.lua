@@ -95,62 +95,38 @@ local function source_configs(config_root, options)
 
   logger.info('Starting configuration file sourcing', 'FileSourcer')
 
-  -- Source plugins configuration first (if enabled)
-  if options.enable_plugins then
-    -- Single plugins.lua file
-    local plugins_lua = config_root .. '/plugins.lua'
-    local success, error_msg = source_lua_file(plugins_lua)
-    if success then
-      total_files_sourced = total_files_sourced + 1
-      logger.debug('Sourced plugins.lua', 'FileSourcer')
-    elseif vim.fn.filereadable(plugins_lua) == 1 then
-      -- Only log error if file exists but failed to source
-      overall_success = false
-      local safe_error = error_msg or 'Unknown error'
-      table.insert(all_errors, { file = plugins_lua, error = safe_error })
-      logger.error(safe_error, 'FileSourcer')
-    end
-
-    -- Plugins directory
-    local plugins_dir = config_root .. '/plugins'
-    local plugins_result = source_directory(plugins_dir, options)
-    total_files_sourced = total_files_sourced + plugins_result.files_sourced
-
-    if not plugins_result.success then
-      overall_success = false
-      for _, error_info in ipairs(plugins_result.errors) do
-        table.insert(all_errors, error_info)
+  local function source_path(path, is_dir)
+    if is_dir then
+      local result = source_directory(path, options)
+      total_files_sourced = total_files_sourced + result.files_sourced
+      if not result.success then
+        overall_success = false
+        for _, error_info in ipairs(result.errors) do
+          table.insert(all_errors, error_info)
+        end
+      end
+    else
+      local success, error_msg = source_lua_file(path)
+      if success then
+        total_files_sourced = total_files_sourced + 1
+        logger.debug('Sourced ' .. path, 'FileSourcer')
+      elseif vim.fn.filereadable(path) == 1 then
+        overall_success = false
+        local safe_error = error_msg or 'Unknown error'
+        table.insert(all_errors, { file = path, error = safe_error })
+        logger.error(safe_error, 'FileSourcer')
       end
     end
   end
 
-  -- Source keybindings configuration (if enabled)
+  if options.enable_plugins then
+    source_path(config_root .. '/plugins.lua', false)
+    source_path(config_root .. '/plugins', true)
+  end
+
   if options.enable_keybindings then
-    -- Single keybindings.lua file
-    local keybindings_lua = config_root .. '/keybindings.lua'
-    local success, error_msg = source_lua_file(keybindings_lua)
-    if success then
-      total_files_sourced = total_files_sourced + 1
-      logger.debug('Sourced keybindings.lua', 'FileSourcer')
-    elseif vim.fn.filereadable(keybindings_lua) == 1 then
-      -- Only log error if file exists but failed to source
-      overall_success = false
-      local safe_error = error_msg or 'Unknown error'
-      table.insert(all_errors, { file = keybindings_lua, error = safe_error })
-      logger.error(safe_error, 'FileSourcer')
-    end
-
-    -- Keybindings directory
-    local keybindings_dir = config_root .. '/keybindings'
-    local keybindings_result = source_directory(keybindings_dir, options)
-    total_files_sourced = total_files_sourced + keybindings_result.files_sourced
-
-    if not keybindings_result.success then
-      overall_success = false
-      for _, error_info in ipairs(keybindings_result.errors) do
-        table.insert(all_errors, error_info)
-      end
-    end
+    source_path(config_root .. '/keybindings.lua', false)
+    source_path(config_root .. '/keybindings', true)
   end
 
   -- Log final results
@@ -245,12 +221,8 @@ end
 ---@return boolean valid True if directories are valid
 ---@return string? error Error message if validation fails
 local function validate_config_root(config_root)
-  if type(config_root) ~= 'string' then
-    return false, 'config_root must be a string'
-  end
-
-  if config_root == '' then
-    return false, 'config_root cannot be empty'
+  if type(config_root) ~= 'string' or config_root == '' then
+    return false, 'config_root must be a non-empty string'
   end
 
   if vim.fn.isdirectory(config_root) == 0 then
