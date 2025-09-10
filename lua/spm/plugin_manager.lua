@@ -4,86 +4,82 @@ local toml_parser = require('spm.toml_parser')
 local pack_installer = require('spm.pack_installer')
 local file_sourcer = require('spm.file_sourcer')
 local crypto = require('spm.crypto')
+local Result = require('spm.error').Result
 
 ---Reads file content
 ---@param file_path string
----@return string? content
----@return string? error
+---@return Result<string>
 local function read_file(file_path)
-  local file, err = io.open(file_path, 'r')
-  if not file then
-    return nil, 'Cannot open file: ' .. tostring(err)
-  end
-  local content = file:read('*a')
-  file:close()
-  return content
+  return Result.try(function()
+    local file, read_err = io.open(file_path, 'r')
+    if not file then
+      error('Cannot open file: ' .. (read_err or 'Unknown error'))
+    end
+
+    ---@type string
+    local content = file:read('*a')
+    local ok, close_err = file:close()
+    if not ok then
+      error('Cannot close file: ' .. (close_err or 'Unknown error'))
+    end
+
+    return content
+  end)
 end
 
 ---Parses the plugins configuration file
 ---@param plugins_toml_path string Path to the plugins.toml file
----@return PluginConfig? config The parsed configuration
----@return string? error Error message if parsing fails
+---@return Result<PluginConfig>
 local function parse_config(plugins_toml_path)
   logger.info(string.format('Parsing configuration: %s', plugins_toml_path), 'PluginManager')
 
-  local success, result = pcall(toml_parser.parse_plugins_toml, plugins_toml_path)
-  if not success then
-    local error_msg = string.format('Failed to parse plugins.toml: %s', result)
-    logger.error(error_msg, 'PluginManager')
-
-    return nil, error_msg
-  elseif not result then
-    local error_msg = string.format('Failed to parse plugins.toml: %s', result)
-    logger.error(error_msg, 'PluginManager')
-
-    return nil, error_msg
+  ---@type fun(config: PluginConfig): Result<PluginConfig>
+  local validate_config = function(config)
+    return config:validate()
+        :map(function()
+          logger.info(string.format('Found %d plugins', #config.plugins), 'PluginManager')
+          return config
+        end)
   end
 
-  -- Validate the parsed configuration
-  local valid, validation_error = result:validate()
-  if not valid then
-    local error_msg = string.format('Invalid plugin configuration: %s', validation_error)
-    logger.error(error_msg, 'PluginManager')
-    return nil, error_msg
-  end
-
-  logger.info(string.format('Found %d plugins', #result.plugins), 'PluginManager')
-  return result, nil
+  return toml_parser.parse_plugins_toml(plugins_toml_path)
+      :flat_map(validate_config)
 end
 
 ---@param config SimplePMConfig
 ---@param force_reinstall boolean?
+---@return Result<PluginConfig>
 local function get_plugin_config(config, force_reinstall)
-  local plugins_toml_content, read_err = read_file(config.plugins_toml_path)
-  if not plugins_toml_content then
-    local err_msg = 'Setup failed: could not read plugins.toml: ' .. (read_err or 'unknown')
-    logger.error(err_msg, 'PluginManager')
-    return nil, err_msg
+  local parse_plugins_file = function(plugins_toml_content)
+    return function(lock_data)
+      local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
+      if force_reinstall or is_stale then
+        logger.info('Lock file is stale or missing. Installing/updating plugins.', 'PluginManager')
+        return parse_config(config.plugins_toml_path)
+      elseif lock_data then
+        logger.info('Lock file is up to date. Verifying plugins from lock file.', 'PluginManager')
+        return Result.ok({
+          plugins = lock_data.plugins or {},
+          language_servers = lock_data.language_servers or {},
+          filetypes = lock_data.filetypes or {},
+        })
+      else
+        return Result.err('Failed to read lock file')
+      end
+    end
   end
 
-  local lock_data = lock_manager.read(config.lock_file_path)
-  local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
-
-  if force_reinstall or is_stale then
-    logger.info('Lock file is stale or missing. Installing/updating plugins.', 'PluginManager')
-    return parse_config(config.plugins_toml_path)
-  elseif lock_data then
-    logger.info('Lock file is up to date. Verifying plugins from lock file.', 'PluginManager')
-    return {
-      plugins = lock_data.plugins or {},
-      language_servers = lock_data.language_servers or {},
-      filetypes = lock_data.filetypes or {},
-    },
-      nil
-  else
-    logger.error('Failed to read lock file', 'PluginManager')
-    return nil, 'Failed to read lock file'
-  end
+  return read_file(config.plugins_toml_path)
+      :flat_map(function(plugins_toml_content)
+        return lock_manager.read(config.lock_file_path)
+            :flat_map(parse_plugins_file(plugins_toml_content))
+      end)
 end
 
 ---@param plugins PluginSpec[]
 ---@param force_reinstall boolean?
 ---@param is_stale boolean
+---@return Result<nil>
 local function install_plugins(plugins, force_reinstall, is_stale)
   local log_message = string.format('Verifying and loading %d plugins...', #plugins)
   if force_reinstall or is_stale then
@@ -91,111 +87,176 @@ local function install_plugins(plugins, force_reinstall, is_stale)
   end
 
   logger.info(log_message, 'PluginManager')
-  local install_success, install_error = pack_installer.install(plugins)
-  if not install_success then
-    logger.error('Plugin setup failed during install/verify step.', 'PluginManager')
-    return false, install_error
-  end
-  logger.info('Successfully verified and loaded all plugins.', 'PluginManager')
-  return true
+  return pack_installer(plugins)
 end
 
 ---@param config SimplePMConfig
 ---@param parsed_config PluginConfig
 ---@param flattened_plugins PluginSpec[]
+---@return Result<nil>
 local function update_lock_file(config, parsed_config, flattened_plugins)
   logger.info('Updating lock file now.', 'PluginManager')
-  local plugins_toml_content, read_err = read_file(config.plugins_toml_path)
-  if not plugins_toml_content then
-    local err_msg = 'Setup failed: could not read plugins.toml: ' .. (read_err or 'unknown')
-    logger.error(err_msg, 'PluginManager')
-    return
+
+  ---@type fun(plugins_toml_hash: string): Result<table>
+  local build_lock_data = function(hash)
+    return {
+      hash = hash,
+      plugins = flattened_plugins,
+      language_servers = parsed_config.language_servers,
+      filetypes = parsed_config.filetypes,
+    }
   end
 
-  local new_hash = crypto.generate_hash(plugins_toml_content)
+  ---@type fun(lock_data: table): Result<string>
+  local write_lock_file = function(new_lock_data)
+    return lock_manager.write(config.lock_file_path, new_lock_data)
+  end
 
-  local new_lock_data = {
-    hash = new_hash,
-    plugins = flattened_plugins,
-    language_servers = parsed_config.language_servers,
-    filetypes = parsed_config.filetypes,
-  }
-  local ok, write_err = lock_manager.write(config.lock_file_path, new_lock_data)
-  if not ok then
-    logger.error('Failed to write lock file: ' .. (write_err or 'unknown error'), 'PluginManager')
+  return read_file(config.plugins_toml_path)
+      :map(crypto.generate_hash)
+      :map(build_lock_data)
+      :map(write_lock_file)
+end
+
+---Sources configuration files in the specified order
+---@param config_root string Root directory of the neovim config
+---@param options table? Sourcing options
+---@return Result<nil>
+local function source_configs(config_root, options)
+  options = vim.tbl_deep_extend('force', { enable_plugins = true, enable_keybindings = true, recursive = false },
+    options or {})
+
+  local overall_success = true
+  ---@type Error[]
+  local all_errors = {}
+  local total_files_sourced = 0
+
+  logger.info('Starting configuration file sourcing', 'PluginManager')
+
+  local function source_path(path, is_dir)
+    if is_dir then
+      local result = file_sourcer.source_directory(path, options)
+      if result:is_err() then
+        overall_success = false
+        table.insert(all_errors, result.error)
+      else
+        total_files_sourced = total_files_sourced + result:unwrap().files_sourced
+      end
+    else
+      local result = file_sourcer.source_lua_file(path)
+      if result:is_ok() then
+        total_files_sourced = total_files_sourced + 1
+        logger.debug('Sourced ' .. path, 'PluginManager')
+      elseif vim.fn.filereadable(path) == 1 then
+        overall_success = false
+        table.insert(all_errors, result.error)
+        logger.error(result.error.message, 'PluginManager')
+      end
+    end
+  end
+
+  if options.enable_plugins then
+    source_path(config_root .. '/plugins.lua', false)
+    source_path(config_root .. '/plugins', true)
+  end
+
+  if options.enable_keybindings then
+    source_path(config_root .. '/keybindings.lua', false)
+    source_path(config_root .. '/keybindings', true)
+  end
+
+  -- Log final results
+  if overall_success then
+    logger.info(
+      string.format('Successfully sourced %d configuration files', total_files_sourced),
+      'PluginManager'
+    )
+    return Result.ok(nil)
   else
-    logger.info('Lock file successfully written.', 'PluginManager')
+    local error_summary = string.format('Failed to source %d files', #all_errors)
+    logger.error(error_summary, 'PluginManager')
+    return Result.err(error_summary)
   end
 end
 
 ---Main method to install plugins and configure the system
+---@type fun(config: SimplePMConfig, force_reinstall: boolean?): Result<nil>
 ---@param config SimplePMConfig The full configuration object
 ---@param force_reinstall boolean? Whether to ignore the lock file and force reinstall
----@return boolean success True if the entire process was successful
----@return string? error Error message if any step fails
+---@return Result<nil>
 local function setup(config, force_reinstall)
   logger.info('--- Starting PluginManager Setup ---', 'PluginManager')
 
-  local parsed_config, err = get_plugin_config(config, force_reinstall)
-  if err then
-    return false, err
+  local config_result = get_plugin_config(config, force_reinstall)
+  if config_result:is_err() then
+    return config_result
   end
-
-  if not parsed_config then
-    return false, 'Failed to get plugin config'
-  end
+  ---@type PluginConfig
+  local parsed_config = config_result:unwrap()
 
   local flattened_plugins = parsed_config:flatten_plugins()
 
-  local plugins_toml_content = read_file(config.plugins_toml_path)
-  if not plugins_toml_content then
-    return false, 'Failed to read plugins.toml'
+  local content_result = read_file(config.plugins_toml_path)
+  if content_result:is_err() then
+    return content_result
   end
+  ---@type string
+  local plugins_toml_content = content_result:unwrap()
 
-  local lock_data = lock_manager.read(config.lock_file_path)
+  local lock_data_result = lock_manager.read(config.lock_file_path)
+  if lock_data_result:is_err() then
+    return lock_data_result
+  end
+  ---@type table
+  local lock_data = lock_data_result:unwrap()
+
   local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
 
-  local ok, install_err = install_plugins(flattened_plugins, force_reinstall, is_stale)
-  if not ok then
-    return false, install_err
+  local install_result = install_plugins(flattened_plugins, force_reinstall, is_stale)
+  if install_result:is_err() then
+    return install_result
   end
 
   if force_reinstall or is_stale then
-    update_lock_file(config, parsed_config, flattened_plugins)
-  end
-
-  logger.info('Sourcing user configuration files.', 'PluginManager')
-  local source_success, source_error = file_sourcer.source_configs(config.config_root)
-  if not source_success then
-    return false, source_error
-  end
-
-  logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
-  return true, nil
-end
-
----Debug method to show parsed plugins without installing
----@param plugins_toml_path string Path to the plugins.toml file
----@return PluginSpec[]? plugins List of parsed plugins
----@return string? error Error message if parsing fails
-local function debug_plugins(plugins_toml_path)
-  local config, error_msg = parse_config(plugins_toml_path)
-  if not config then
-    return nil, error_msg
-  end
-
-  local flattened_plugins = config:flatten_plugins()
-
-  -- Output debug information
-  print(string.format('Found %d plugins:', #flattened_plugins))
-  for i, plugin in ipairs(flattened_plugins) do
-    print(string.format('  %d. %s -> %s', i, plugin.name or 'unnamed', plugin.src))
-    if plugin.version then
-      print(string.format('     Version: %s', plugin.version))
+    local update_lock_file_result = update_lock_file(config, parsed_config, flattened_plugins)
+    if update_lock_file_result:is_err() then
+      return update_lock_file_result
     end
   end
 
-  return flattened_plugins, nil
+  logger.info('Sourcing user configuration files.', 'PluginManager')
+  local source_configs_result = source_configs(config.config_root)
+  if source_configs_result:is_err() then
+    return source_configs_result
+  end
+
+  logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
+  return Result.ok(nil)
+end
+
+
+
+---Debug method to show parsed plugins without installing
+---@type fun(plugins_toml_path: string): Result<PluginSpec[]>
+---@param plugins_toml_path string Path to the plugins.toml file
+---@return Result<PluginSpec[]>
+local function debug_plugins(plugins_toml_path)
+  -- Logs the flattened plugins
+  ---@type fun(flattened_plugins: PluginSpec[]): PluginSpec[]
+  local log_flatten_plugins = function(flattened_plugins)
+    logger.info(string.format('Found %d plugins', #flattened_plugins), 'PluginManager')
+    for i, plugin in ipairs(flattened_plugins) do
+      logger.info(string.format('  %d. %s -> %s', i, plugin.name or 'unnamed', plugin.src), 'PluginManager')
+      if plugin.version then
+        logger.info(string.format('     Version: %s', plugin.version), 'PluginManager')
+      end
+    end
+    return flattened_plugins
+  end
+
+  return parse_config(plugins_toml_path)
+      :map(function(config) return config:flatten_plugins() end)
+      :map(log_flatten_plugins)
 end
 
 return {

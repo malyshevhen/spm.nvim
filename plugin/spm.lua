@@ -1,10 +1,12 @@
-local config_module = require('spm.config')
 local logger = require('spm.logger')
-local keymap = require('spm.keymap')
-local plugin_manager = require('spm.plugin_manager')
+local Result = require('spm.error').Result
 
 ---@class SimplePM
-local SimplePM = {}
+local spm = {
+  config_module = require('spm.config'),
+  keymap = require('spm.keymap'),
+  plugin_manager = require('spm.plugin_manager'),
+}
 
 ---Sets up logging based on configuration
 ---@param config SimplePMConfig
@@ -20,43 +22,42 @@ end
 
 ---Main initialization function
 ---@param user_config table? Configuration options
----@return boolean success True if initialization was successful
-function SimplePM.init(user_config)
-  local config, config_error = config_module.SimplePMConfig.create(user_config)
-  if not config then
-    logger.error('Configuration error: ' .. (config_error or 'Unknown error'), 'SimplePM')
-    return false
-  end
-
-  setup_logging(config)
-
-  local files_valid, file_error = config:validate_files_exists()
-  if not files_valid then
-    logger.error('File validation error: ' .. (file_error or 'Unknown error'), 'SimplePM')
-    return false
-  end
-
-  local success, setup_error = plugin_manager.setup(config)
-  if not success then
-    logger.error('Plugin setup failed: ' .. (setup_error or 'Unknown error'), 'SimplePM')
-    return false
-  end
-
-  logger.info('Initialization complete', 'SimplePM')
-  return true
+---@return Result<nil>
+function spm.init(user_config)
+  return spm.config_module.SimplePMConfig.create(user_config)
+      :flat_map(function(config)
+        setup_logging(config)
+        return config:validate_files_exists()
+            :flat_map(function()
+              return spm.plugin_manager.setup(config)
+            end)
+      end)
+      :map(function()
+        logger.info('Initialization complete', 'SimplePM')
+        return nil
+      end)
+      :or_else(function(err)
+        logger.error('Initialization failed: ' .. err.message, 'SimplePM')
+        return Result.err(err)
+      end)
 end
 
 ---Quick setup function with minimal configuration
 ---@param plugins_toml_path string? Path to plugins.toml file
----@return boolean success True if setup was successful
-function SimplePM.setup(plugins_toml_path)
-  return SimplePM.init({ plugins_toml_path = plugins_toml_path })
+---@return Result<nil>
+function spm.setup(plugins_toml_path)
+  return spm.init({ plugins_toml_path = plugins_toml_path })
 end
 
 ---Get the keymap compatibility system for direct use
 ---@param keymaps KeymapSpec[]? Keymaps to map
-function SimplePM.keymaps(keymaps)
-  keymap.map(keymaps or {})
+function spm.keymaps(keymaps)
+  spm.keymap.map(keymaps or {})
 end
 
-return SimplePM
+return setmetatable(spm, {
+  __newindex = function(_, key, _)
+    error(string.format("Cannot modify SimplePM API. Attempted to set '%s'", key))
+  end,
+  __metatable = 'SimplePM API is protected',
+})

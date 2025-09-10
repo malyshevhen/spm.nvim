@@ -1,0 +1,17 @@
+#:schema https://raw.githubusercontent.com/malyshevhen/spm.nvim/refs/heads/main/plugins-schema.json
+
+[[plugins]]
+name = "alpha-nvim"
+src  = "https://github.com/goolord/alpha-nvim"
+
+[[plugins]]
+name         = "neotest"
+src          = "https://github.com/nvim-neotest/neotest"
+dependencies = ["https://github.com/nvim-lua/plenary.nvim"]
+
+[language_servers]
+servers = ["lua_ls"]
+
+[filetypes]
+[filetypes.pattern]
+'docker-compose%.yml' = 'yaml.docker-compose'

@@ -53,7 +53,12 @@ function KeymapSpec:set_single_keymap()
     vim.api.nvim_create_autocmd('FileType', {
       pattern = self.ft,
       callback = function(args)
-        vim.keymap.set(mode, self.map, self.cmd, vim.tbl_extend('force', opts, { buffer = args.buf }))
+        vim.keymap.set(
+          mode,
+          self.map,
+          self.cmd,
+          vim.tbl_extend('force', opts, { buffer = args.buf })
+        )
       end,
       desc = string.format('Set keymap %s for filetype %s', self.map, self.ft),
     })
@@ -89,4 +94,5 @@ end
 
 return {
   map = map,
+  KeymapSpec = KeymapSpec,
 }

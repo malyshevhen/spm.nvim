@@ -1,6 +1,8 @@
 words = [
     "keymap",
     "keymaps",
+    "metatable",
+    "newindex",
     "nodoc",
     "reparsing",
     "sourcer",

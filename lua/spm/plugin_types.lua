@@ -1,3 +1,5 @@
+local Result = require('spm.error').Result
+
 ---@class PluginSpec
 ---@field name string? Optional human-readable name for the plugin
 ---@field src string Full URL to the plugin repository (required)
@@ -7,18 +9,17 @@ local PluginSpec = {}
 PluginSpec.__index = PluginSpec
 
 ---Validates a single plugin specification
----@return boolean valid True if the plugin spec is valid
----@return string? error_msg Error message if validation fails
+---@return Result<PluginSpec>
 function PluginSpec:validate()
   if type(self) ~= 'table' then
-    return false, 'Plugin must be a table'
+    return Result.err('Plugin must be a table')
   end
 
   if not self.src or type(self.src) ~= 'string' or not self.src:match('^https://') then
-    return false, "Plugin must have a 'src' field with a valid HTTPS URL"
+    return Result.err("Plugin must have a 'src' field with a valid HTTPS URL")
   end
 
-  return true, nil
+  return Result.ok(self)
 end
 
 ---@class LanguageServerSpec
@@ -34,26 +35,25 @@ PluginConfig.__index = PluginConfig
 ---@alias PluginList PluginSpec[]
 
 ---Validates a complete plugin configuration
----@return boolean valid True if the config is valid
----@return string? error_msg Error message if validation fails
+---@return Result<PluginConfig>
 function PluginConfig:validate()
   if type(self) ~= 'table' then
-    return false, 'Config must be a table'
+    return Result.err('Config must be a table')
   end
 
   if not self.plugins or type(self.plugins) ~= 'table' then
-    return false, "Config must have a 'plugins' field of type array"
+    return Result.err("Config must have a 'plugins' field of type array")
   end
 
   for i, plugin in ipairs(self.plugins) do
     setmetatable(plugin, PluginSpec)
-    local valid, err = plugin:validate()
-    if not valid then
-      return false, string.format('Plugin at index %d: %s', i, err)
+    local validation_result = plugin:validate()
+    if validation_result:is_err() then
+      return Result.err(string.format('Plugin at index %d: %s', i, validation_result.error.message))
     end
   end
 
-  return true, nil
+  return Result.ok(self)
 end
 
 ---Extracts the repository name from a Git URL

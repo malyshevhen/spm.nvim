@@ -1,34 +1,31 @@
-name: Ci
+name: Tests
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Stylua
-        uses: JohnnyMorganz/stylua-action@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: latest
-          args: --check .
+  unit_tests:
+    name: unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+        rev: [nightly]
 
-  docs:
-    runs-on: ubuntu-latest
-    name: pandoc to vimdoc
-    if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-      - uses: actions/checkout@v3
-      - name: panvimdoc
-        uses: kdheepak/panvimdoc@main
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
         with:
-          vimdoc: spm.nvim
-          treesitter: true
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "chore(doc): auto generate docs"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
-          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-ply.github.com>"
+          neovim: true
+          version: ${{ matrix.rev }}
+
+      - name: Prepare
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+          git clone --depth 1 https://github.com/nvim-tree/nvim-web-devicons ../nvim-web-devicons
+
+      - name: Run tests
+        run: |
+          nvim --version
+          make test

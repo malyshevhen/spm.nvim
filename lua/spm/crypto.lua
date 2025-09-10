@@ -1,17 +1,19 @@
+local Result = require('spm.error').Result
+
 ---Generates a SHA256 hash for the given content
 ---@param content string The content to hash
----@return string? hash The SHA256 hash, or nil if hashing fails
+---@return Result<string>
 local function generate_hash(content)
   if type(content) ~= 'string' then
-    return nil
+    return Result.err('Content must be a string')
   end
 
   local success, hash = pcall(vim.fn.sha256, content)
   if not success then
-    return nil
+    return Result.err('Failed to generate hash')
   end
 
-  return hash
+  return Result.ok(hash)
 end
 
 return {

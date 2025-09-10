@@ -1,38 +1,28 @@
 local logger = require('spm.logger')
 local crypto = require('spm.crypto')
 local toml_parser = require('spm.toml_parser')
+local Result = require('spm.error').Result
 
 ---Reads and parses the lock file
 ---@param lock_file_path string
----@return table? lock_data
----@return string? error
+---@return Result<table>
 local function read(lock_file_path)
   if vim.fn.filereadable(lock_file_path) == 0 then
     logger.info('Lock file not found at: ' .. lock_file_path, 'LockManager')
-    return nil
+    return Result.ok(nil)
   end
 
-  local success, data = pcall(toml_parser.parse_file, lock_file_path)
-  if not success then
-    local err = 'Failed to parse lock file: ' .. tostring(data)
-    logger.error(err, 'LockManager')
-    return nil, err
-  end
-
-  return data
+  return toml_parser.parse_file(lock_file_path)
 end
 
 ---Writes data to the lock file
 ---@param lock_file_path string
 ---@param lock_data table
----@return boolean success
----@return string? error
+---@return Result<boolean>
 local function write(lock_file_path, lock_data)
-  local ok, result = pcall(toml_parser.encode, lock_data)
-  if not ok then
-    local error_msg = 'Failed to encode lock data: ' .. tostring(result)
-    logger.error(error_msg, 'LockManager')
-    return false, error_msg
+  local encode_result = toml_parser.encode(lock_data)
+  if encode_result:is_err() then
+    return encode_result
   end
 
   -- Ensure directory exists
@@ -45,13 +35,13 @@ local function write(lock_file_path, lock_data)
   if not file then
     local error_msg = 'Failed to open lock file for writing: ' .. tostring(open_err)
     logger.error(error_msg, 'LockManager')
-    return false, error_msg
+    return Result.err(error_msg)
   end
 
-  file:write(result)
+  file:write(encode_result:unwrap())
   file:close()
   logger.info('Lock file updated at: ' .. lock_file_path, 'LockManager')
-  return true
+  return Result.ok(true)
 end
 
 ---Checks if the lock file is stale by comparing hashes
@@ -64,13 +54,13 @@ local function is_stale(plugins_toml_content, lock_data)
     return true
   end
 
-  local new_hash = crypto.generate_hash(plugins_toml_content)
-  if not new_hash then
+  local new_hash_result = crypto.generate_hash(plugins_toml_content)
+  if new_hash_result:is_err() then
     logger.error('Failed to generate hash for plugins.toml', 'LockManager')
     return true -- Treat as stale if hashing fails
   end
 
-  if new_hash ~= lock_data.hash then
+  if new_hash_result:unwrap() ~= lock_data.hash then
     logger.info('Lock file is stale: plugins.toml has changed.', 'LockManager')
     return true
   end

@@ -1,6 +1,22 @@
+# .stylua.toml
+# Configuration for stylua formatter
+
+# Basic formatting options
 column_width = 100
 line_endings = "Unix"
-indent_type = "Spaces"
+indent_type  = "Spaces"
 indent_width = 2
-quote_style = "AutoPreferSingle"
-call_parentheses = "Always"
+quote_style  = "AutoPreferSingle"
+
+# Function formatting - key settings for keeping one-liners flat
+call_parentheses          = "Always"
+collapse_simple_statement = "Always"
+
+# Table formatting
+table_separator = "Smart"
+
+# Advanced function formatting options
+function_args_parentheses = "Always"
+
+# Lua version target (affects some formatting decisions)
+lua_version = "Lua52"
