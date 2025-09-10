@@ -1,6 +1,3 @@
----@class PackInstaller
-local M = {}
-
 local logger = require('spm.logger')
 
 ---@class PackInstallerOptions
@@ -104,7 +101,7 @@ end
 ---@param options PackInstallerOptions? Installation options
 ---@return boolean success True if installation was successful
 ---@return string? error Error message if installation fails
-function M.install(plugins, options)
+local function install(plugins, options)
   if not plugins or #plugins == 0 then
     return true, nil -- Nothing to install is considered success
   end
@@ -143,7 +140,7 @@ end
 ---@param plugin_names string[]? List of plugin names to get info for (nil for all)
 ---@return table[]? plugin_info List of plugin information
 ---@return string? error Error message if operation fails
-function M.get_info(plugin_names)
+local function get_info(plugin_names)
   local available, error_msg = validate_vim_pack()
   if not available then
     return nil, error_msg
@@ -162,7 +159,7 @@ end
 ---@param force boolean? Whether to skip confirmation and update immediately
 ---@return boolean success True if update was successful
 ---@return string? error Error message if update fails
-function M.update(plugin_names, force)
+local function update(plugin_names, force)
   local available, error_msg = validate_vim_pack()
   if not available then
     return false, error_msg
@@ -184,7 +181,7 @@ end
 ---@param plugin_names string[] List of plugin names to remove
 ---@return boolean success True if removal was successful
 ---@return string? error Error message if removal fails
-function M.remove(plugin_names)
+local function remove(plugin_names)
   if not plugin_names or #plugin_names == 0 then
     return true, nil -- Nothing to remove is considered success
   end
@@ -205,8 +202,14 @@ end
 ---Checks if vim.pack is available and working
 ---@return boolean available True if vim.pack is available
 ---@return string? error Error message if not available
-function M.check_availability()
+local function check_availability()
   return validate_vim_pack()
 end
 
-return M
+return {
+  install = install,
+  get_info = get_info,
+  update = update,
+  remove = remove,
+  check_availability = check_availability,
+}

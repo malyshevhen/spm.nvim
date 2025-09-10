@@ -1,6 +1,3 @@
----@class TomlParser
-local M = {}
-
 local toml = require('spm.vendor.toml')
 local logger = require('spm.logger')
 
@@ -19,7 +16,7 @@ end
 ---Parses TOML content string
 ---@param content string The TOML content to parse
 ---@return table parsed The parsed TOML data
-function M.parse(content)
+local function parse(content)
   if type(content) ~= 'string' then
     error('TOML content must be a string')
   end
@@ -40,7 +37,7 @@ end
 ---Reads and parses a TOML file
 ---@param filepath string Path to the TOML file
 ---@return table parsed The parsed TOML data
-function M.parse_file(filepath)
+local function parse_file(filepath)
   if type(filepath) ~= 'string' then
     error('File path must be a string')
   end
@@ -78,10 +75,10 @@ end
 ---Parses plugins.toml specifically and returns a PluginConfig
 ---@param filepath string Path to the plugins.toml file
 ---@return PluginConfig config The parsed plugin configuration
-function M.parse_plugins_toml(filepath)
+local function parse_plugins_toml(filepath)
   logger.debug(string.format('Parsing plugins.toml: %s', filepath), 'TomlParser')
 
-  local data = M.parse_file(filepath)
+  local data = parse_file(filepath)
 
   -- Validate that we have a plugins section
   if not data.plugins then
@@ -112,7 +109,7 @@ end
 ---@param content string The TOML content to validate
 ---@return boolean valid True if the TOML content is valid
 ---@return string? error Error message if validation failed
-function M.validate(content)
+local function validate(content)
   if type(content) ~= 'string' then
     return false, 'TOML content must be a string'
   end
@@ -133,7 +130,7 @@ end
 ---@param filepath string Path to the TOML file
 ---@return boolean valid True if the TOML file is valid
 ---@return string? error Error message if validation failed
-function M.validate_file(filepath)
+local function validate_file(filepath)
   if type(filepath) ~= 'string' then
     return false, 'File path must be a string'
   end
@@ -154,13 +151,13 @@ function M.validate_file(filepath)
     return false, string.format('Failed to read content from file: %s', filepath)
   end
 
-  return M.validate(content)
+  return validate(content)
 end
 
 ---Encodes a Lua table to TOML format (using vendor library)
 ---@param tbl table The table to encode
 ---@return string toml_content The TOML representation
-function M.encode(tbl)
+local function encode(tbl)
   if type(tbl) ~= 'table' then
     error('Input must be a table')
   end
@@ -176,7 +173,7 @@ end
 
 ---Gets information about the TOML library being used
 ---@return table info Information about the TOML parser
-function M.get_info()
+local function get_info()
   return {
     library = 'vendor/toml.lua',
     version = toml.version or 'unknown',
@@ -186,7 +183,7 @@ end
 
 ---Sets strict mode for TOML parsing (if supported by vendor library)
 ---@param strict boolean Whether to enable strict mode
-function M.set_strict_mode(strict)
+local function set_strict_mode(strict)
   if type(strict) ~= 'boolean' then
     error('Strict mode must be a boolean')
   end
@@ -199,4 +196,8 @@ function M.set_strict_mode(strict)
   end
 end
 
-return M
+return {
+  parse_plugins_toml = parse_plugins_toml,
+  parse_file = parse_file,
+  encode = encode,
+}

@@ -1,6 +1,3 @@
----@class Logger
-local M = {}
-
 ---@enum LogLevel
 local LOG_LEVELS = {
   DEBUG = 1,
@@ -33,6 +30,17 @@ local VIM_LOG_LEVELS = {
   [LOG_LEVELS.WARN] = vim.log.levels.WARN,
   [LOG_LEVELS.ERROR] = vim.log.levels.ERROR,
 }
+
+---@class Logger
+---@field private config LoggerConfig
+local Logger = {}
+Logger.__index = Logger
+
+function Logger.new()
+  return setmetatable({
+    config = config,
+  }, Logger)
+end
 
 ---Formats a log message with prefix and context
 ---@param level LogLevel The log level
@@ -81,84 +89,83 @@ end
 
 ---Configures the logger
 ---@param user_config table? Logger configuration
-function M.configure(user_config)
+function Logger.configure(user_config)
   if user_config then
     config = vim.tbl_deep_extend('force', config, user_config)
   end
 end
 
 ---Enables debug logging
-function M.enable_debug()
+function Logger.enable_debug()
   config.level = LOG_LEVELS.DEBUG
   config.enabled = true
 end
 
 ---Disables all logging
-function M.disable()
+function Logger.disable()
   config.enabled = false
 end
 
 ---Logs a debug message
 ---@param message string The message to log
 ---@param context string? Optional context information
-function M.debug(message, context)
+function Logger.debug(message, context)
   log(LOG_LEVELS.DEBUG, message, context)
 end
 
 ---Logs an info message
 ---@param message string The message to log
 ---@param context string? Optional context information
-function M.info(message, context)
+function Logger.info(message, context)
   log(LOG_LEVELS.INFO, message, context)
 end
 
 ---Logs a warning message
 ---@param message string The message to log
 ---@param context string? Optional context information
-function M.warn(message, context)
+function Logger.warn(message, context)
   log(LOG_LEVELS.WARN, message, context)
 end
 
 ---Logs an error message
 ---@param message string The message to log
 ---@param context string? Optional context information
-function M.error(message, context)
+function Logger.error(message, context)
   log(LOG_LEVELS.ERROR, message, context)
 end
 
 ---Gets the log history
 ---@return string[]
-function M.get_history()
+function Logger.get_history()
   return log_history
 end
 
 ---Clears the log history
-function M.clear_history()
+function Logger.clear_history()
   log_history = {}
 end
 
 ---Creates a contextual logger that automatically includes context
 ---@param context string The context for all log messages
 ---@return table contextual_logger Logger with automatic context
-function M.create_context(context)
+function Logger.create_context(context)
   return {
     debug = function(message)
-      M.debug(message, context)
+      Logger.debug(message, context)
     end,
     info = function(message)
-      M.info(message, context)
+      Logger.info(message, context)
     end,
     warn = function(message)
-      M.warn(message, context)
+      Logger.warn(message, context)
     end,
     error = function(message)
-      M.error(message, context)
+      Logger.error(message, context)
     end,
   }
 end
 
 ---Exposes log levels for external use
-M.levels = LOG_LEVELS
+Logger.levels = LOG_LEVELS
 
-return M
-
+return Logger

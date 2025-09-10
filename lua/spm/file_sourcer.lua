@@ -1,6 +1,3 @@
----@class FileSourer
-local M = {}
-
 local logger = require('spm.logger')
 
 ---@class FileSourcerOptions
@@ -89,7 +86,7 @@ end
 ---@param options FileSourcerOptions? Sourcing options
 ---@return boolean success True if sourcing was successful
 ---@return string? error Error message if sourcing fails
-function M.source_configs(config_root, options)
+local function source_configs(config_root, options)
   options = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options or {})
 
   local overall_success = true
@@ -174,35 +171,35 @@ end
 ---@param config_root string Root directory of the neovim config
 ---@return boolean success True if sourcing was successful
 ---@return string? error Error message if sourcing fails
-function M.source_plugins_only(config_root)
+local function source_plugins_only(config_root)
   local options = {
     enable_plugins = true,
     enable_keybindings = false,
     recursive = false,
   }
 
-  return M.source_configs(config_root, options)
+  return source_configs(config_root, options)
 end
 
 ---Sources only keybinding configuration files
 ---@param config_root string Root directory of the neovim config
 ---@return boolean success True if sourcing was successful
 ---@return string? error Error message if sourcing fails
-function M.source_keybindings_only(config_root)
+local function source_keybindings_only(config_root)
   local options = {
     enable_plugins = false,
     enable_keybindings = true,
     recursive = false,
   }
 
-  return M.source_configs(config_root, options)
+  return source_configs(config_root, options)
 end
 
 ---Gets a list of configuration files that would be sourced
 ---@param config_root string Root directory of the neovim config
 ---@param options FileSourcerOptions? Sourcing options
 ---@return table file_info Information about files that would be sourced
-function M.list_config_files(config_root, options)
+local function list_config_files(config_root, options)
   options = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options or {})
 
   local file_info = {
@@ -247,7 +244,7 @@ end
 ---@param config_root string Root directory of the neovim config
 ---@return boolean valid True if directories are valid
 ---@return string? error Error message if validation fails
-function M.validate_config_root(config_root)
+local function validate_config_root(config_root)
   if type(config_root) ~= 'string' then
     return false, 'config_root must be a string'
   end
@@ -263,4 +260,10 @@ function M.validate_config_root(config_root)
   return true, nil
 end
 
-return M
+return {
+  source_configs = source_configs,
+  source_plugins_only = source_plugins_only,
+  source_keybindings_only = source_keybindings_only,
+  list_config_files = list_config_files,
+  validate_config_root = validate_config_root,
+}
