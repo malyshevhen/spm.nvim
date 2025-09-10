@@ -14,13 +14,6 @@ local function generate_hash(content)
   return hash
 end
 
----Checks if the current Neovim version supports crypto functions
----@return boolean supported True if crypto functions are supported
-local function is_supported()
-  return type(vim.fn.sha256) == 'function'
-end
-
 return {
   generate_hash = generate_hash,
-  is_supported = is_supported,
 }
