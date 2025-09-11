@@ -10,6 +10,7 @@ local spm = {
 
 ---Sets up logging based on configuration
 ---@param config SimplePMConfig
+---@return SimplePMConfig
 local function setup_logging(config)
   logger.configure({
     level = config.debug_mode and logger.levels.DEBUG or logger.levels.INFO,
@@ -18,28 +19,26 @@ local function setup_logging(config)
   if config.debug_mode then
     logger.info('Debug mode enabled', 'SimplePM')
   end
+
+  return config
 end
 
 ---Main initialization function
 ---@param user_config table? Configuration options
----@return Result<nil>
 function spm.init(user_config)
-  return spm.config_module.SimplePMConfig.create(user_config)
-      :flat_map(function(config)
-        setup_logging(config)
-        return config:validate_files_exists()
-            :flat_map(function()
-              return spm.plugin_manager.setup(config)
-            end)
-      end)
-      :map(function()
+  return spm.config_module.create(user_config)
+      :map(setup_logging)
+      :flat_map(function(config) return config:validate_files_exists() end)
+      :flat_map(function(config) return spm.plugin_manager.setup(config) end)
+      :map(function(_)
         logger.info('Initialization complete', 'SimplePM')
         return nil
       end)
-      :or_else(function(err)
-        logger.error('Initialization failed: ' .. err.message, 'SimplePM')
-        return Result.err(err)
+      :map_err(function(err)
+        logger.error('Initialization failed: ' .. err, 'SimplePM')
+        return err
       end)
+      :unwrap()
 end
 
 ---Quick setup function with minimal configuration
