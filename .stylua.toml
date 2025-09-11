@@ -13,7 +13,7 @@ call_parentheses          = "Always"
 collapse_simple_statement = "Always"
 
 # Table formatting
-table_separator = "Smart"
+# table_separator = "Smart"
 
 # Advanced function formatting options
 function_args_parentheses = "Always"
