@@ -90,4 +90,4 @@ function PluginConfig:flatten_plugins()
   return flattened
 end
 
-return PluginConfig
+return { PluginConfig = PluginConfig, PluginSpec = PluginSpec }
