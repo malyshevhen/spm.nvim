@@ -54,6 +54,7 @@ describe('toml_parser', function()
   end)
 
   it('should return an error if the input is not a table', function()
+    ---@diagnostic disable-next-line: param-type-mismatch
     local result = toml_parser.encode('not a table')
 
     assert.is_true(result:is_err())

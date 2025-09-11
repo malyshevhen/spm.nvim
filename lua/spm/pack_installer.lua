@@ -68,8 +68,6 @@ end
 -- }
 
 return setmetatable(installer, {
-  __call = function(_, plugins, options)
-    return install(plugins, options)
-  end,
+  __call = function(_, plugins, options) return install(plugins, options) end,
   __index = installer,
 })

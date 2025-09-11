@@ -35,6 +35,7 @@ describe('Config', function()
   end)
 
   it('should return an error if the config is not a table', function()
+    ---@diagnostic disable-next-line: param-type-mismatch
     local result = Config.create('not a table')
     assert.is_true(result:is_err())
   end)
@@ -93,7 +94,10 @@ describe('Config', function()
     local config = result:unwrap()
     local file_result = config:validate_files_exists()
     assert.is_true(file_result:is_err())
-    assert.are.same('plugins.toml not found at: /tmp/non_existent_plugins.toml', file_result.error.message)
+    assert.are.same(
+      'plugins.toml not found at: /tmp/non_existent_plugins.toml',
+      file_result.error.message
+    )
   end)
 
   it('should return an error if config_root does not exist', function()

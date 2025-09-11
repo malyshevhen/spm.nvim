@@ -25,9 +25,7 @@ local function parse_file(filepath)
 
   logger.debug(string.format('Reading file: %s', filepath), 'TomlParser')
   local file = io.open(filepath, 'r')
-  if not file then
-    return Result.err(string.format('Cannot open file: %s', filepath))
-  end
+  if not file then return Result.err(string.format('Cannot open file: %s', filepath)) end
 
   logger.debug(string.format('Reading content from file: %s', filepath), 'TomlParser')
   local content = file:read('*all')
@@ -39,8 +37,9 @@ local function parse_file(filepath)
 
   logger.debug(string.format('Read %d bytes from %s', #content, filepath), 'TomlParser')
 
-  return safe_parse(content)
-      :map_err(function(err) return string.format('Cannot parse file: %s; %s', filepath, err) end)
+  return safe_parse(content):map_err(
+    function(err) return string.format('Cannot parse file: %s; %s', filepath, err) end
+  )
 end
 
 ---Parses plugins.toml specifically and returns a PluginConfig
@@ -50,18 +49,16 @@ local function parse_plugins_toml(filepath)
   logger.debug(string.format('Parsing plugins.toml: %s', filepath), 'TomlParser')
 
   local data_result = parse_file(filepath)
-  if data_result:is_err() then
-    return data_result
-  end
+  if data_result:is_err() then return data_result end
   local data = data_result:unwrap()
 
   if not data.plugins or type(data.plugins) ~= 'table' then
-    return Result.err(string.format('plugins.toml must contain a [[plugins]] section. File: %s', filepath))
+    return Result.err(
+      string.format('plugins.toml must contain a [[plugins]] section. File: %s', filepath)
+    )
   end
 
-  if #data.plugins == 0 then
-    logger.warn('No plugins defined in plugins.toml', 'TomlParser')
-  end
+  if #data.plugins == 0 then logger.warn('No plugins defined in plugins.toml', 'TomlParser') end
 
   logger.info(
     string.format('Parsed %d plugin definitions from %s', #data.plugins, filepath),
@@ -79,14 +76,10 @@ end
 ---@param value table The table to encode
 ---@return Result<string>
 local function encode(value)
-  if type(value) ~= 'table' then
-    return Result.err('Input must be a table')
-  end
+  if type(value) ~= 'table' then return Result.err('Input must be a table') end
 
   local success, result = pcall(toml.encode, value)
-  if not success then
-    return Result.err(string.format('TOML encoding failed: %s', result))
-  end
+  if not success then return Result.err(string.format('TOML encoding failed: %s', result)) end
 
   logger.debug('Successfully encoded table to TOML', 'TomlParser')
   return Result.ok(result)

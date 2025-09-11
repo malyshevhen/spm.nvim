@@ -14,7 +14,11 @@ describe('plugin_types', function()
 
     it('should return an error if the plugin is not a table', function()
       local invalid_plugin = 'not a table'
-      setmetatable({ validate = PluginSpec.validate }, { __index = function() return invalid_plugin end })
+      setmetatable(
+        { validate = PluginSpec.validate },
+        { __index = function() return invalid_plugin end }
+      )
+      ---@diagnostic disable-next-line: param-type-mismatch
       local result = PluginSpec.validate(invalid_plugin)
       assert.is_true(result:is_err())
       assert.are.same('Plugin must be a table', result.error.message)
@@ -47,7 +51,11 @@ describe('plugin_types', function()
 
     it('should return an error if the config is not a table', function()
       local invalid_config = 'not a table'
-      setmetatable({ validate = PluginConfig.validate }, { __index = function() return invalid_config end })
+      setmetatable(
+        { validate = PluginConfig.validate },
+        { __index = function() return invalid_config end }
+      )
+      ---@diagnostic disable-next-line: param-type-mismatch
       local result = PluginConfig.validate(invalid_config)
       assert.is_true(result:is_err())
       assert.are.same('Config must be a table', result.error.message)
@@ -74,7 +82,10 @@ describe('plugin_types', function()
       setmetatable(invalid_config, PluginConfig)
       local result = invalid_config:validate()
       assert.is_true(result:is_err())
-      assert.are.same("Plugin at index 1: Plugin must have a 'src' field with a valid HTTPS URL", result.error.message)
+      assert.are.same(
+        "Plugin at index 1: Plugin must have a 'src' field with a valid HTTPS URL",
+        result.error.message
+      )
     end)
   end)
 

@@ -16,7 +16,7 @@ collapse_simple_statement = "Always"
 # table_separator = "Smart"
 
 # Advanced function formatting options
-function_args_parentheses = "Always"
+# function_args_parentheses = "Always"
 
 # Lua version target (affects some formatting decisions)
-lua_version = "Lua52"
+# lua_version = "Lua52"

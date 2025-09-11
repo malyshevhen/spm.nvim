@@ -11,9 +11,7 @@ PluginSpec.__index = PluginSpec
 ---Validates a single plugin specification
 ---@return Result<PluginSpec>
 function PluginSpec:validate()
-  if type(self) ~= 'table' then
-    return Result.err('Plugin must be a table')
-  end
+  if type(self) ~= 'table' then return Result.err('Plugin must be a table') end
 
   if not self.src or type(self.src) ~= 'string' or not self.src:match('^https://') then
     return Result.err("Plugin must have a 'src' field with a valid HTTPS URL")
@@ -37,9 +35,7 @@ PluginConfig.__index = PluginConfig
 ---Validates a complete plugin configuration
 ---@return Result<PluginConfig>
 function PluginConfig:validate()
-  if type(self) ~= 'table' then
-    return Result.err('Config must be a table')
-  end
+  if type(self) ~= 'table' then return Result.err('Config must be a table') end
 
   if not self.plugins or type(self.plugins) ~= 'table' then
     return Result.err("Config must have a 'plugins' field of type array")

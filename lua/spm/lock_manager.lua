@@ -21,15 +21,11 @@ end
 ---@return Result<boolean>
 local function write(lock_file_path, lock_data)
   local encode_result = toml_parser.encode(lock_data)
-  if encode_result:is_err() then
-    return encode_result
-  end
+  if encode_result:is_err() then return encode_result end
 
   -- Ensure directory exists
   local dir = vim.fn.fnamemodify(lock_file_path, ':h')
-  if vim.fn.isdirectory(dir) == 0 then
-    vim.fn.mkdir(dir, 'p')
-  end
+  if vim.fn.isdirectory(dir) == 0 then vim.fn.mkdir(dir, 'p') end
 
   local file, open_err = io.open(lock_file_path, 'w')
   if not file then

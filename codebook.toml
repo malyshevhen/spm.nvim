@@ -2,9 +2,12 @@ words = [
     "keymap",
     "keymaps",
     "metatable",
+    "neotest",
     "newindex",
     "nodoc",
+    "nvim",
     "reparsing",
     "sourcer",
     "spm",
+    "tbl",
 ]

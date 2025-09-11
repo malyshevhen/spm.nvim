@@ -15,7 +15,11 @@ describe('keymap', function()
 
     it('should return an error if the keymap is not a table', function()
       local invalid_keymap = 'not a table'
-      setmetatable({ validate = keymap.KeymapSpec.validate }, { __index = function() return invalid_keymap end })
+      setmetatable(
+        { validate = keymap.KeymapSpec.validate },
+        { __index = function() return invalid_keymap end }
+      )
+      ---@diagnostic disable-next-line: param-type-mismatch
       local valid, err = keymap.KeymapSpec.validate(invalid_keymap)
       assert.is_false(valid)
       assert.are.same('Keymap must be a table', err)

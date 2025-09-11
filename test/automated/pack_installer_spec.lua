@@ -3,13 +3,9 @@ local pack_installer = require('spm.pack_installer')
 describe('pack_installer', function()
   local old_vim_pack
 
-  before_each(function()
-    old_vim_pack = vim.pack
-  end)
+  before_each(function() old_vim_pack = vim.pack end)
 
-  after_each(function()
-    vim.pack = old_vim_pack
-  end)
+  after_each(function() vim.pack = old_vim_pack end)
 
   it('should call vim.pack.add with the correct arguments', function()
     local called = false
@@ -44,9 +40,7 @@ describe('pack_installer', function()
   it('should do nothing if no plugins are provided', function()
     local called = false
     vim.pack = {
-      add = function()
-        called = true
-      end,
+      add = function() called = true end,
     }
 
     local result = pack_installer(nil)

@@ -1,12 +1,11 @@
+---@diagnostic disable: need-check-nil
 local lock_manager = require('spm.lock_manager')
 local crypto = require('spm.crypto')
 
 describe('lock_manager', function()
   local lock_file_path = 'test/fixtures/spm.lock'
 
-  after_each(function()
-    os.remove(lock_file_path)
-  end)
+  after_each(function() os.remove(lock_file_path) end)
 
   it('should read and parse a lock file', function()
     local lock_data = {
@@ -34,7 +33,7 @@ describe('lock_manager', function()
     assert.is_true(result:is_ok())
 
     local file = io.open(lock_file_path, 'r')
-    assert.is_not_nil(file)
+    assert.are.not_nil(file)
     file:close()
   end)
 

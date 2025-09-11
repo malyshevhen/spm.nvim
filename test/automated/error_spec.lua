@@ -46,16 +46,14 @@ describe('error', function()
   end)
 
   it('should map a successful result', function()
-    local result = Result.ok('Hello World')
-        :map(function(x) return x .. ' Universe' end)
+    local result = Result.ok('Hello World'):map(function(x) return x .. ' Universe' end)
 
     assert.is_true(result:is_ok())
     assert.are.same('Hello World Universe', result:unwrap())
   end)
 
   it('should map an unsuccessful result', function()
-    local result = Result.err('Something went wrong')
-        :map(function(x) return x .. ' Universe' end)
+    local result = Result.err('Something went wrong'):map(function(x) return x .. ' Universe' end)
 
     assert.is.True(result:is_err())
     assert.are.same('Something went wrong', result:unwrap_err().message)
@@ -63,7 +61,7 @@ describe('error', function()
 
   it('should map an error result', function()
     local result = Result.err('Something went wrong')
-        :map_err(function(x) return x .. ' Universe' end)
+      :map_err(function(x) return x .. ' Universe' end)
 
     assert.is_true(result:is_err())
     assert.are.same('Something went wrong Universe', result:unwrap_err().message)
@@ -71,7 +69,7 @@ describe('error', function()
 
   it('should flat_map a successful result', function()
     local result = Result.ok('Hello World')
-        :flat_map(function(x) return Result.ok(x .. ' Universe') end)
+      :flat_map(function(x) return Result.ok(x .. ' Universe') end)
 
     assert.is_true(result:is_ok())
     assert.are.same('Hello World Universe', result:unwrap())
@@ -79,7 +77,7 @@ describe('error', function()
 
   it('should flat_map an unsuccessful result', function()
     local result = Result.err('Something went wrong')
-        :flat_map(function(x) return Result.ok(x .. ' Universe') end)
+      :flat_map(function(x) return Result.ok(x .. ' Universe') end)
 
     assert.is_true(result:is_err())
     assert.are.same('Something went wrong', result:unwrap_err().message)
@@ -87,7 +85,7 @@ describe('error', function()
 
   it('should return error if flat_map function returns an error', function()
     local result = Result.ok('Something went wrong')
-        :flat_map(function(x) return Result.err(x .. ' Universe') end)
+      :flat_map(function(x) return Result.err(x .. ' Universe') end)
 
     assert.is_true(result:is_err())
     assert.are.same('Something went wrong Universe', result:unwrap_err().message)
@@ -95,15 +93,14 @@ describe('error', function()
 
   it('should chain successful results', function()
     local result = Result.ok('Hello World')
-        :flat_map(function(x) return Result.ok(x .. ' Universe') end)
+      :flat_map(function(x) return Result.ok(x .. ' Universe') end)
 
     assert.is_true(result:is_ok())
     assert.are.same('Hello World Universe', result:unwrap())
   end)
 
   it('should or_else a successful result', function()
-    local result = Result.ok('Hello World')
-        :or_else(function() return 'But fine!' end)
+    local result = Result.ok('Hello World'):or_else(function() return 'But fine!' end)
 
     assert.is.True(result:is_ok())
     assert.are.same('Hello World', result:unwrap())
@@ -111,7 +108,7 @@ describe('error', function()
 
   it('should or_else an error result', function()
     local result = Result.err('Something went wrong')
-        :or_else(function() error('Something went wrong Universe') end)
+      :or_else(function() error('Something went wrong Universe') end)
 
     assert.is.True(result:is_err())
     assert.truthy(result:unwrap_err().message:find('Something went wrong Universe'))
@@ -133,23 +130,21 @@ describe('error', function()
     local result1 = Result.ok('Hello World')
     local result2 = Result.err('Something went wrong')
 
-    assert.is_true(result1:is_ok())  -- true
+    assert.is_true(result1:is_ok()) -- true
     assert.is_true(result2:is_err()) -- true
 
     -- Chaining operations
-    local final_result = Result.ok(5)
-        :map(function(x) return x * 2 end)
-        :map(tostring)
+    local final_result = Result.ok(5):map(function(x) return x * 2 end):map(tostring)
 
     if final_result:is_err() then
-      print("Expected: 10, got: " .. final_result)
+      print('Expected: 10, got: ' .. final_result)
       assert.is.True(false)
     end
     local actual = final_result:unwrap()
-    assert.are.same("10", actual)
+    assert.are.same('10', actual)
 
     if type(actual) ~= 'string' then
-      print("Expected: string, got: " .. type(actual))
+      print('Expected: string, got: ' .. type(actual))
       assert.is.True(false)
     end
 

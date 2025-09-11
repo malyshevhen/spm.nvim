@@ -12,16 +12,12 @@ local Result = require('spm.error').Result
 local function read_file(file_path)
   return Result.try(function()
     local file, read_err = io.open(file_path, 'r')
-    if not file then
-      error('Cannot open file: ' .. (read_err or 'Unknown error'))
-    end
+    if not file then error('Cannot open file: ' .. (read_err or 'Unknown error')) end
 
     ---@type string
     local content = file:read('*a')
     local ok, close_err = file:close()
-    if not ok then
-      error('Cannot close file: ' .. (close_err or 'Unknown error'))
-    end
+    if not ok then error('Cannot close file: ' .. (close_err or 'Unknown error')) end
 
     return content
   end)
@@ -35,15 +31,15 @@ local function parse_config(plugins_toml_path)
 
   ---@type fun(config: PluginConfig): Result<PluginConfig>
   local validate_config = function(config)
-    return config:validate()
-        :map(function()
-          logger.info(string.format('Found %d plugins', #config.plugins), 'PluginManager')
-          return config
-        end)
+    local result = config:validate()
+    if result:is_ok() then
+      logger.info(string.format('Found %d plugins', #config.plugins), 'PluginManager')
+    end
+
+    return result
   end
 
-  return toml_parser.parse_plugins_toml(plugins_toml_path)
-      :flat_map(validate_config)
+  return toml_parser.parse_plugins_toml(plugins_toml_path):flat_map(validate_config)
 end
 
 ---@param config SimplePMConfig
@@ -58,6 +54,7 @@ local function get_plugin_config(config, force_reinstall)
         return parse_config(config.plugins_toml_path)
       elseif lock_data then
         logger.info('Lock file is up to date. Verifying plugins from lock file.', 'PluginManager')
+
         return Result.ok({
           plugins = lock_data.plugins or {},
           language_servers = lock_data.language_servers or {},
@@ -69,11 +66,13 @@ local function get_plugin_config(config, force_reinstall)
     end
   end
 
-  return read_file(config.plugins_toml_path)
-      :flat_map(function(plugins_toml_content)
-        return lock_manager.read(config.lock_file_path)
-            :flat_map(parse_plugins_file(plugins_toml_content))
-      end)
+  return read_file(config.plugins_toml_path):flat_map(
+    function(plugins_toml_content)
+      return lock_manager
+        .read(config.lock_file_path)
+        :flat_map(parse_plugins_file(plugins_toml_content))
+    end
+  )
 end
 
 ---@param plugins PluginSpec[]
@@ -113,9 +112,9 @@ local function update_lock_file(config, parsed_config, flattened_plugins)
   end
 
   return read_file(config.plugins_toml_path)
-      :map(crypto.generate_hash)
-      :map(build_lock_data)
-      :map(write_lock_file)
+    :map(crypto.generate_hash)
+    :map(build_lock_data)
+    :map(write_lock_file)
 end
 
 ---Sources configuration files in the specified order
@@ -123,8 +122,11 @@ end
 ---@param options table? Sourcing options
 ---@return Result<nil>
 local function source_configs(config_root, options)
-  options = vim.tbl_deep_extend('force', { enable_plugins = true, enable_keybindings = true, recursive = false },
-    options or {})
+  options = vim.tbl_deep_extend(
+    'force',
+    { enable_plugins = true, enable_keybindings = true, recursive = false },
+    options or {}
+  )
 
   local overall_success = true
   ---@type Error[]
@@ -188,53 +190,39 @@ local function setup(config, force_reinstall)
   logger.info('--- Starting PluginManager Setup ---', 'PluginManager')
 
   local config_result = get_plugin_config(config, force_reinstall)
-  if config_result:is_err() then
-    return config_result
-  end
+  if config_result:is_err() then return config_result end
   ---@type PluginConfig
   local parsed_config = config_result:unwrap()
 
   local flattened_plugins = parsed_config:flatten_plugins()
 
   local content_result = read_file(config.plugins_toml_path)
-  if content_result:is_err() then
-    return content_result
-  end
+  if content_result:is_err() then return content_result end
   ---@type string
   local plugins_toml_content = content_result:unwrap()
 
   local lock_data_result = lock_manager.read(config.lock_file_path)
-  if lock_data_result:is_err() then
-    return lock_data_result
-  end
+  if lock_data_result:is_err() then return lock_data_result end
   ---@type table
   local lock_data = lock_data_result:unwrap()
 
   local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
 
   local install_result = install_plugins(flattened_plugins, force_reinstall, is_stale)
-  if install_result:is_err() then
-    return install_result
-  end
+  if install_result:is_err() then return install_result end
 
   if force_reinstall or is_stale then
     local update_lock_file_result = update_lock_file(config, parsed_config, flattened_plugins)
-    if update_lock_file_result:is_err() then
-      return update_lock_file_result
-    end
+    if update_lock_file_result:is_err() then return update_lock_file_result end
   end
 
   logger.info('Sourcing user configuration files.', 'PluginManager')
   local source_configs_result = source_configs(config.config_root)
-  if source_configs_result:is_err() then
-    return source_configs_result
-  end
+  if source_configs_result:is_err() then return source_configs_result end
 
   logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
   return Result.ok(nil)
 end
-
-
 
 ---Debug method to show parsed plugins without installing
 ---@type fun(plugins_toml_path: string): Result<PluginSpec[]>
@@ -246,7 +234,10 @@ local function debug_plugins(plugins_toml_path)
   local log_flatten_plugins = function(flattened_plugins)
     logger.info(string.format('Found %d plugins', #flattened_plugins), 'PluginManager')
     for i, plugin in ipairs(flattened_plugins) do
-      logger.info(string.format('  %d. %s -> %s', i, plugin.name or 'unnamed', plugin.src), 'PluginManager')
+      logger.info(
+        string.format('  %d. %s -> %s', i, plugin.name or 'unnamed', plugin.src),
+        'PluginManager'
+      )
       if plugin.version then
         logger.info(string.format('     Version: %s', plugin.version), 'PluginManager')
       end
@@ -255,8 +246,8 @@ local function debug_plugins(plugins_toml_path)
   end
 
   return parse_config(plugins_toml_path)
-      :map(function(config) return config:flatten_plugins() end)
-      :map(log_flatten_plugins)
+    :map(function(config) return config:flatten_plugins() end)
+    :map(log_flatten_plugins)
 end
 
 return {

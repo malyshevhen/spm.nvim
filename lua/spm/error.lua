@@ -29,32 +29,24 @@ end
 ---@generic T
 ---@param result T
 ---@return Result<T>
-function Result.ok(result)
-  return Result.new(true, result, nil)
-end
+function Result.ok(result) return Result.new(true, result, nil) end
 
 ---Create an error result
 ---@generic T
 ---@param error Error|string
 ---@return Result<T>
 function Result.err(error)
-  if type(error) == 'string' then
-    error = { message = error }
-  end
+  if type(error) == 'string' then error = { message = error } end
   return Result.new(false, nil, error)
 end
 
 ---Check if result is successful
 ---@return boolean
-function Result:is_ok()
-  return self.success
-end
+function Result:is_ok() return self.success end
 
 ---Check if result is an error
 ---@return boolean
-function Result:is_err()
-  return not self.success
-end
+function Result:is_err() return not self.success end
 
 ---Get the result value, throwing error if unsuccessful
 ---@generic T
@@ -72,24 +64,18 @@ end
 ---@generic T
 ---@param default T
 ---@return T
-function Result:unwrap_or(default)
-  return self.success and self.result or default
-end
+function Result:unwrap_or(default) return self.success and self.result or default end
 
 ---Get the error value
 ---@return Error
-function Result:unwrap_err()
-  return self.error
-end
+function Result:unwrap_err() return self.error end
 
 ---Map the result value if successful
 ---@generic T, U
 ---@param fn fun(value: T): U
 ---@return Result<U>
 function Result:map(fn)
-  if not self.success then
-    return Result.err(self.error)
-  end
+  if not self.success then return Result.err(self.error) end
 
   local ok, mapped_result = pcall(fn, self.result)
   if not ok then
@@ -104,9 +90,7 @@ end
 ---@param fn fun(error: string): T
 ---@return Result<T>
 function Result:map_err(fn)
-  if self.success then
-    return Result.ok(self.result)
-  end
+  if self.success then return Result.ok(self.result) end
   local ok, mapped_error = pcall(fn, self.error.message)
   if not ok then
     return Result.err({ message = 'Map_err function failed: ' .. tostring(mapped_error) })
@@ -119,9 +103,7 @@ end
 ---@param fn fun(value: T): Result<U>
 ---@return Result<U>
 function Result:flat_map(fn)
-  if not self.success then
-    return Result.err(self.error)
-  end
+  if not self.success then return Result.err(self.error) end
 
   local ok, next_result = pcall(fn, self.result)
   if not ok then
@@ -141,9 +123,7 @@ end
 ---@param fn fun(): T
 ---@return Result<T>
 function Result:or_else(fn)
-  if self.success then
-    return self
-  end
+  if self.success then return self end
 
   local ok, recovery_result = pcall(fn)
   if not ok then
@@ -159,7 +139,10 @@ function Result:__tostring()
   if self.success then
     return string.format('Ok(%s)', vim.inspect(self.result))
   else
-    return string.format('Err(%s)', vim.inspect(self.error and self.error.message or 'Unknown error'))
+    return string.format(
+      'Err(%s)',
+      vim.inspect(self.error and self.error.message or 'Unknown error')
+    )
   end
 end
 

@@ -91,8 +91,8 @@ describe('plugin_manager integration', function()
       local lock_data = {
         hash = 'test_hash',
         plugins = {
-          { name = 'test-plugin', src = 'https://github.com/test/plugin' }
-        }
+          { name = 'test-plugin', src = 'https://github.com/test/plugin' },
+        },
       }
 
       -- Write lock file
@@ -172,7 +172,7 @@ describe('plugin_manager integration', function()
         hash = hash_result:unwrap(),
         plugins = flattened_plugins,
         language_servers = config.language_servers or {},
-        filetypes = config.filetypes or {}
+        filetypes = config.filetypes or {},
       }
 
       local write_result = lock_manager.write(test_lock_file_path, lock_data)
@@ -202,7 +202,7 @@ describe('plugin_manager integration', function()
         complex_file:write('servers = ["lua_ls", "gopls"]\n\n')
         complex_file:write('[filetypes]\n')
         complex_file:write('[filetypes.pattern]\n')
-        complex_file:write('\'*.test\' = \'testfiletype\'\n')
+        complex_file:write("'*.test' = 'testfiletype'\n")
         complex_file:close()
       end
 
@@ -226,14 +226,14 @@ describe('plugin_manager integration', function()
     it('should handle malformed TOML files', function()
       local malformed_file = io.open(test_plugins_toml_path, 'w')
       if malformed_file then
-        malformed_file:write('[[plugins]\n')     -- Missing closing bracket
+        malformed_file:write('[[plugins]\n') -- Missing closing bracket
         malformed_file:write('name = "broken\n') -- Missing closing quote
         malformed_file:close()
       end
 
-      local success, result = pcall(function()
-        return toml_parser.parse_plugins_toml(test_plugins_toml_path)
-      end)
+      local success, result = pcall(
+        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+      )
 
       if success then
         assert.is_true(result:is_err())
@@ -253,9 +253,9 @@ describe('plugin_manager integration', function()
         invalid_file:close()
       end
 
-      local success, parse_result = pcall(function()
-        return toml_parser.parse_plugins_toml(test_plugins_toml_path)
-      end)
+      local success, parse_result = pcall(
+        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+      )
 
       if success and parse_result and parse_result.is_ok then
         if parse_result:is_ok() then
