@@ -1,6 +1,4 @@
 {
-    "diagnostics.globals": [
-        "describe",
-        "it"
-    ]
+  "diagnostics.globals": []
 }
+

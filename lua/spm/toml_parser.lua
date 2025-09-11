@@ -7,9 +7,10 @@ local Result = require('spm.error').Result
 ---@return Result<table>
 local function safe_parse(content)
   local success, result = pcall(toml.parse, content)
-  if not success then
-    return Result.err(string.format('TOML parsing failed: %s', tostring(result)))
+  if not success or type(result) ~= 'table' or next(result) == nil then
+    return Result.err(string.format('TOML parsing failed: %s', result))
   end
+
   return Result.ok(result)
 end
 
@@ -39,6 +40,7 @@ local function parse_file(filepath)
   logger.debug(string.format('Read %d bytes from %s', #content, filepath), 'TomlParser')
 
   return safe_parse(content)
+      :map_err(function(err) return string.format('Cannot parse file: %s; %s', filepath, err) end)
 end
 
 ---Parses plugins.toml specifically and returns a PluginConfig
