@@ -3,24 +3,22 @@ local Result = require('spm.error').Result
 ---@class SimplePMConfig
 ---@field plugins_toml_path string? Path to plugins.toml file (nil will default to config_root/plugins.toml)
 ---@field lock_file_path string? Path to the lock file
----@field auto_source_configs boolean Whether to automatically source config files
----@field auto_setup_keymaps boolean Whether to automatically setup keymap system
----@field show_startup_messages boolean Whether to show startup messages
----@field debug_mode boolean Enable debug logging
----@field config_root string Root directory of the neovim config
+---@field auto_source_configs boolean? Whether to automatically source config files
+---@field auto_setup_keymaps boolean? Whether to automatically setup keymap system
+---@field show_startup_messages boolean? Whether to show startup messages
+---@field debug_mode boolean? Enable debug logging
 local SimplePMConfig = {}
 SimplePMConfig.__index = SimplePMConfig
 
 --- Default configuration values
 ---@type SimplePMConfig
 local DEFAULT_CONFIG = {
-  plugins_toml_path = nil, -- Will be set to config_root/plugins.toml if nil
+  plugins_toml_path = vim.fn.stdpath('config') .. '/plugins.toml',
   lock_file_path = vim.fn.stdpath('data') .. '/spm.lock',
   auto_source_configs = true,
   auto_setup_keymaps = true,
   show_startup_messages = false,
   debug_mode = false,
-  config_root = vim.fn.stdpath('config'),
 }
 
 --- Validates the configuration
@@ -51,12 +49,6 @@ function SimplePMConfig:validate()
 
   if type(self.debug_mode) ~= 'boolean' then return Result.err('debug_mode must be a boolean') end
 
-  if type(self.config_root) ~= 'string' then return Result.err('config_root must be a string') end
-
-  if vim.fn.isdirectory(self.config_root) == 0 then
-    return Result.err('config_root must be a valid directory')
-  end
-
   return Result.ok(self)
 end
 
@@ -68,16 +60,8 @@ function SimplePMConfig.create(user_config)
     return Result.err('Configuration must be a table')
   end
 
+  ---@type SimplePMConfig
   local config = vim.tbl_deep_extend('force', vim.deepcopy(DEFAULT_CONFIG), user_config or {})
-
-  -- Set default plugins.toml path if not provided
-  if not config.plugins_toml_path then
-    config.plugins_toml_path = config.config_root .. '/plugins.toml'
-  end
-
-  if not config.lock_file_path then
-    config.lock_file_path = vim.fn.stdpath('data') .. '/spm.lock'
-  end
 
   setmetatable(config, SimplePMConfig)
 
@@ -93,11 +77,6 @@ function SimplePMConfig:validate_files_exists()
   -- Check if plugins.toml exists
   if vim.fn.filereadable(self.plugins_toml_path) == 0 then
     return Result.err(string.format('plugins.toml not found at: %s', self.plugins_toml_path))
-  end
-
-  -- Check if config root is accessible
-  if vim.fn.isdirectory(self.config_root) == 0 then
-    return Result.err(string.format('Config root directory not found: %s', self.config_root))
   end
 
   return Result.ok(self)

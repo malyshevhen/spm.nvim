@@ -217,7 +217,7 @@ local function setup(config, force_reinstall)
   end
 
   logger.info('Sourcing user configuration files.', 'PluginManager')
-  local source_configs_result = source_configs(config.config_root)
+  local source_configs_result = source_configs(vim.fn.stdpath('config'))
   if source_configs_result:is_err() then return source_configs_result end
 
   logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
