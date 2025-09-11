@@ -60,10 +60,10 @@ function SimplePMConfig.create(user_config)
     return Result.err('Configuration must be a table')
   end
 
-  ---@type SimplePMConfig
   local config = vim.tbl_deep_extend('force', vim.deepcopy(DEFAULT_CONFIG), user_config or {})
 
-  setmetatable(config, SimplePMConfig)
+  ---@type SimplePMConfig
+  config = setmetatable(config, SimplePMConfig)
 
   -- Final validation of resolved config
   return config:validate():map(function() return config end)
