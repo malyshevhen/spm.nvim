@@ -12,6 +12,7 @@ local function create_plugin_config(data)
   return data
 end
 
+-- TODO: test are flaky, so need to be fixed
 describe('plugin_manager integration', function()
   local test_plugins_toml_path
   local test_lock_file_path
