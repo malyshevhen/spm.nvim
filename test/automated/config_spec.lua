@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local Config = require('spm.config')
 
 describe('Config', function()

@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local PluginConfig = require('spm.plugin_types').PluginConfig
 local PluginSpec = require('spm.plugin_types').PluginSpec
 

@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local lock_manager = require('spm.lock_manager')
 local crypto = require('spm.crypto')
 

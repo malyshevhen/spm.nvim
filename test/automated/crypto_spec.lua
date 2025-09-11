@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local crypto = require('spm.crypto')
 
 describe('crypto', function()

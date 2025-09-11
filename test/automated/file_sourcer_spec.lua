@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local file_sourcer = require('spm.file_sourcer')
 
 describe('file_sourcer', function()

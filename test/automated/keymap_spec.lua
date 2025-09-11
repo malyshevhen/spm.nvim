@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local keymap = require('spm.keymap')
 
 describe('keymap', function()
