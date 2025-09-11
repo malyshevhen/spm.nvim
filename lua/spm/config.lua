@@ -70,6 +70,10 @@ end
 ---@param user_config table? User-provided configuration
 ---@return Result<SimplePMConfig>
 function SimplePMConfig.create(user_config)
+  if user_config and type(user_config) ~= 'table' then
+    return Result.err('Configuration must be a table')
+  end
+
   local config = vim.tbl_deep_extend('force', vim.deepcopy(DEFAULT_CONFIG), user_config or {})
 
   -- Set default plugins.toml path if not provided
