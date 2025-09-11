@@ -27,7 +27,7 @@ function spm.setup(user_config)
   if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
 
   logger.debug('Initialize config', 'SimplePM')
-  cfg = spm.config_module.create(user_config):unwrap()
+  cfg = spm.config_module.create(cfg):unwrap()
 
   logger.debug('Check required config files', 'SimplePM')
   spm.config_module.validate_files_exists(cfg):unwrap()
