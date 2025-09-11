@@ -28,8 +28,8 @@ end
 function spm.init(user_config)
   return spm.config_module.create(user_config)
       :map(setup_logging)
-      :flat_map(function(config) return config:validate_files_exists() end)
-      :flat_map(function(config) return spm.plugin_manager.setup(config) end)
+      :flat_map(function(config) return config and config:validate_files_exists() or config end)
+      :flat_map(function(config) return config and spm.plugin_manager.setup(config) or config end)
       :map(function(_)
         logger.info('Initialization complete', 'SimplePM')
         return nil
