@@ -11,30 +11,31 @@ local spm = {
 ---Sets up logging based on configuration
 ---@param config SimplePMConfig
 ---@return SimplePMConfig
-local function setup_logging(config)
-  logger.configure({
-    level = config.debug_mode and logger.levels.DEBUG or logger.levels.INFO,
-    show_notifications = config.show_startup_messages,
-  })
-  if config.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
-
-  return config
-end
+local function setup_logging(config) return config end
 
 ---Main initialization function
 ---@param user_config SimplePMConfig? Configuration options
 function spm.setup(user_config)
-  local result = spm.config_module
-    .create(user_config)
-    :map(setup_logging)
-    :flat_map(spm.config_module.validate_files_exists)
-    :flat_map(spm.plugin_manager.setup)
+  ---@type SimplePMConfig
+  local cfg = user_config or {}
 
-  if result:is_ok() then
-    logger.info('Initialization complete', 'SimplePM')
-  else
-    logger.error('Initialization failed: ' .. result:unwrap_err().message, 'SimplePM')
-  end
+  logger.configure({
+    level = cfg.debug_mode and logger.levels.DEBUG or logger.levels.INFO,
+    show_notifications = cfg.show_startup_messages or false,
+  })
+
+  if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
+
+  logger.debug('Initialize config', 'SimplePM')
+  cfg = spm.config_module.create(user_config):unwrap()
+
+  logger.debug('Check required config files', 'SimplePM')
+  spm.config_module.validate_files_exists(cfg):unwrap()
+
+  logger.debug('Setup SimplePM', 'SimplePM')
+  spm.plugin_manager.setup(cfg):unwrap()
+
+  logger.info('Initialization complete', 'SimplePM')
 end
 
 ---Get the keymap compatibility system for direct use

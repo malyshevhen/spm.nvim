@@ -72,14 +72,14 @@ end
 function SimplePMConfig.default() return vim.deepcopy(DEFAULT_CONFIG) end
 
 ---Validates that required files exist for the configuration
----@return Result<SimplePMConfig>
+---@return Result<nil>
 function SimplePMConfig:validate_files_exists()
   -- Check if plugins.toml exists
   if vim.fn.filereadable(self.plugins_toml_path) == 0 then
     return Result.err(string.format('plugins.toml not found at: %s', self.plugins_toml_path))
   end
 
-  return Result.ok(self)
+  return Result.ok(nil)
 end
 
 return SimplePMConfig
