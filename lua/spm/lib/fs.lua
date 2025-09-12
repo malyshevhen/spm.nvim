@@ -21,6 +21,7 @@ local fs = {}
 ---@param path string
 ---@return spm.Result<nil>
 function fs.delete_file(path)
+  logger.debug(string.format('Deleting file: %s', path), 'fs')
   if not path or type(path) ~= 'string' then
     return Result.err('Invalid path')
   end
@@ -39,13 +40,14 @@ function fs.delete_file(path)
   end
 
   return Result.try(delete_file_func()):map_err(
-    function(err) return ('Failed to delete file: %s; %s'):format(path, tostring(err)) end
+    function(err) return string.format('Failed to delete file: %s; %s', path, tostring(err)) end
   )
 end
 
 ---@param path string
 ---@return spm.Result<nil>
 function fs.mkdir(path)
+  logger.debug(string.format('Creating directory: %s', path), 'fs')
   if not path or type(path) ~= 'string' then
     return Result.err('Invalid path')
   end
@@ -64,13 +66,14 @@ function fs.mkdir(path)
   end
 
   return Result.try(mkdir_func()):map_err(
-    function(err) return ('Failed to create directory: %s; %s'):format(path, tostring(err)) end
+    function(err) return string.format('Failed to create directory: %s; %s', path, tostring(err)) end
   )
 end
 
 ---@param path string
 ---@return spm.Result<nil>
 function fs.rmdir(path)
+  logger.debug(string.format('Removing directory: %s', path), 'fs')
   if not path or type(path) ~= 'string' then
     return Result.err('Invalid path')
   end
@@ -88,7 +91,7 @@ function fs.rmdir(path)
     end
   end
   return Result.try(rmdir_func()):map_err(
-    function(err) return ('Failed to remove directory: %s; %s'):format(path, tostring(err)) end
+    function(err) return string.format('Failed to remove directory: %s; %s', path, tostring(err)) end
   )
 end
 
@@ -96,6 +99,7 @@ end
 ---@param content string
 ---@return spm.Result<nil>
 function fs.write_file(path, content)
+  logger.debug(string.format('Writing to file: %s', path), 'fs')
   if not path or type(path) ~= 'string' then
     return Result.err('Invalid path')
   end
@@ -115,13 +119,14 @@ function fs.write_file(path, content)
   end
 
   return Result.try(write_file_func()):map_err(
-    function(err) return ('Failed to write file: %s; %s'):format(path, tostring(err)) end
+    function(err) return string.format('Failed to write file: %s; %s', path, tostring(err)) end
   )
 end
 
 ---@param path string
 ---@return spm.Result<string>
 function fs.read_file(path)
+  logger.debug(string.format('Reading file: %s', path), 'fs')
   if not path or type(path) ~= 'string' then
     return Result.err('Invalid path')
   end
@@ -139,7 +144,7 @@ function fs.read_file(path)
   end
 
   return Result.try(read_file_func()):map_err(
-    function(err) return ('Failed to read file: %s; %s'):format(path, tostring(err)) end
+    function(err) return string.format('Failed to read file: %s; %s', path, tostring(err)) end
   )
 end
 

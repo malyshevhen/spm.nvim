@@ -8,7 +8,9 @@ local Result = require('spm.lib.error').Result
 ---@param lock_file_path string
 ---@return spm.Result<table>
 local function read(lock_file_path)
+  logger.debug(string.format('Reading lock file: %s', lock_file_path), 'LockManager')
   if vim.fn.filereadable(lock_file_path) ~= 1 then
+    logger.debug('Lock file not found', 'LockManager')
     return Result.ok(nil)
   end
 
@@ -19,6 +21,7 @@ local function read(lock_file_path)
 
   local content = content_result:unwrap()
   if content == '' then
+    logger.debug('Lock file is empty', 'LockManager')
     return Result.ok({})
   end
 
@@ -30,15 +33,27 @@ end
 ---@param lock_data table
 ---@return spm.Result<boolean>
 local function write(lock_file_path, lock_data)
+  logger.debug(string.format('Writing to lock file: %s', lock_file_path), 'LockManager')
   return toml_parser.encode(lock_data):flat_map(function(encoded_data)
     -- Ensure directory exists
     local dir = vim.fn.fnamemodify(lock_file_path, ':h')
     if vim.fn.isdirectory(dir) == 0 then
-      vim.fn.mkdir(dir, 'p')
+      logger.debug(string.format('Creating directory: %s', dir), 'LockManager')
+      local success = vim.fn.mkdir(dir, 'p')
+      if success == 0 then
+        logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
+        return Result.err(string.format('Failed to create directory: %s', dir))
+      end
+    end
+
+    -- Check again after creating the directory
+    if vim.fn.isdirectory(dir) == 0 then
+      logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
+      return Result.err(string.format('Failed to create directory: %s', dir))
     end
 
     return fs.write_file(lock_file_path, encoded_data):map(function()
-      logger.info('Lock file updated at: ' .. lock_file_path, 'LockManager')
+      logger.info(string.format('Lock file updated at: %s', lock_file_path), 'LockManager')
       return true
     end)
   end)
@@ -49,6 +64,7 @@ end
 ---@param lock_data table?
 ---@return boolean is_stale
 local function is_stale(plugins_toml_content, lock_data)
+  logger.debug('Checking if lock file is stale', 'LockManager')
   if not lock_data or not lock_data.hash then
     logger.info('Lock file is stale: no lock data or hash found.', 'LockManager')
     return true

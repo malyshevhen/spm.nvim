@@ -21,18 +21,23 @@ end
 ---@param force_reinstall boolean?
 ---@return spm.Result<spm.PluginConfig>
 local function get_plugin_config(config, force_reinstall)
+  logger.debug('Getting plugin config', 'PluginManager')
   local plugins_toml_content_result = fs.read_file(config.plugins_toml_path)
   if plugins_toml_content_result:is_err() then
+    logger.error('Failed to read plugins.toml', 'PluginManager')
     return plugins_toml_content_result
   end
   local plugins_toml_content = plugins_toml_content_result:unwrap()
+  logger.debug('Successfully read plugins.toml', 'PluginManager')
 
   local lock_data_result = lock_manager.read(config.lock_file_path)
   if lock_data_result:is_err() then
+    logger.error('Failed to read lock file', 'PluginManager')
     return lock_data_result
   end
-
   local lock_data = lock_data_result:unwrap()
+  logger.debug('Successfully read lock file', 'PluginManager')
+
   if not lock_data or not lock_data.hash then
     logger.info('Lock file is missing. Installing/updating plugins.', 'PluginManager')
     return parse_config(config.plugins_toml_path)
@@ -169,15 +174,19 @@ local function setup(config, force_reinstall)
 
   local config_result = get_plugin_config(config, force_reinstall)
   if config_result:is_err() then
+    logger.error('Failed to get plugin config', 'PluginManager')
     return config_result
   end
   ---@type spm.PluginConfig
   local parsed_config = config_result:unwrap()
+  logger.debug('Successfully got plugin config', 'PluginManager')
 
   local flattened_plugins = parsed_config:flatten_plugins()
+  logger.debug(string.format('Found %d plugins to process', #flattened_plugins), 'PluginManager')
 
   local content_result = fs.read_file(config.plugins_toml_path)
   if content_result:is_err() then
+    logger.error('Failed to read plugins.toml for stale check', 'PluginManager')
     return content_result
   end
   ---@type string
@@ -185,30 +194,38 @@ local function setup(config, force_reinstall)
 
   local lock_data_result = lock_manager.read(config.lock_file_path)
   if lock_data_result:is_err() then
+    logger.error('Failed to read lock file for stale check', 'PluginManager')
     return lock_data_result
   end
   ---@type table
   local lock_data = lock_data_result:unwrap()
 
   local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
+  logger.debug(string.format('Lock file is stale: %s', tostring(is_stale)), 'PluginManager')
 
   local install_result = install_plugins(flattened_plugins, force_reinstall, is_stale)
   if install_result:is_err() then
+    logger.error('Failed to install plugins', 'PluginManager')
     return install_result
   end
+  logger.debug('Successfully installed plugins', 'PluginManager')
 
   if force_reinstall or is_stale then
     local update_lock_file_result = update_lock_file(config, parsed_config, flattened_plugins)
     if update_lock_file_result:is_err() then
+      logger.error('Failed to update lock file', 'PluginManager')
       return update_lock_file_result
     end
+    logger.debug('Successfully updated lock file', 'PluginManager')
   end
 
   logger.info('Sourcing user configuration files.', 'PluginManager')
   local source_configs_result = source_configs(vim.fn.stdpath('config'))
   if source_configs_result:is_err() then
+    logger.error('Failed to source user configs', 'PluginManager')
     return source_configs_result
   end
+  logger.debug('Successfully sourced user configs', 'PluginManager')
 
   logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
   return Result.ok(nil)

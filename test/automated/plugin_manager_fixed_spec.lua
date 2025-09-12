@@ -22,10 +22,11 @@ local function retry_operation(operation, max_retries)
     if success then
       return result
     end
+
     if i < max_retries then
       -- Small delay between retries
       if vim and vim.loop then
-        uv.sleep(10) -- 10ms
+        uv.sleep(30) -- 10ms
       end
     end
   end
@@ -64,6 +65,7 @@ describe('plugin_manager integration', function()
       end)
       if not success then
         print('Failed to clean up file: ' .. tostring(err))
+        error(err)
       end
     end
 
@@ -72,6 +74,7 @@ describe('plugin_manager integration', function()
       local success, err = pcall(function() test_env.temp_dir:rmdir() end)
       if not success then
         print('Failed to clean up temp directory: ' .. tostring(err))
+        error(err)
       end
     end
 
@@ -376,4 +379,3 @@ src = "not-a-valid-url"
     end)
   end)
 end)
-
