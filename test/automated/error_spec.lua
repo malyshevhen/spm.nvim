@@ -150,4 +150,48 @@ describe('error', function()
 
     assert.is.True(true)
   end)
+
+  it('should not modify the original result object when mapping a successful result', function()
+    local r1 = Result.ok(10)
+    local r2 = r1:map(function(x) return x * 2 end)
+
+    assert.is_true(r1:is_ok())
+    assert.are.equal(10, r1:unwrap())
+
+    assert.is_true(r2:is_ok())
+    assert.are.equal(20, r2:unwrap())
+  end)
+
+  it('should not modify the original result object when mapping an error result', function()
+    local r1 = Result.err('error')
+    local r2 = r1:map(function(x) return x * 2 end)
+
+    assert.is_true(r1:is_err())
+    assert.are.equal('error', r1:unwrap_err().message)
+
+    assert.is_true(r2:is_err())
+    assert.are.equal('error', r2:unwrap_err().message)
+  end)
+
+  it('should not modify the original result object when using flat_map', function()
+    local r1 = Result.ok(10)
+    local r2 = r1:flat_map(function(x) return Result.ok(x * 2) end)
+
+    assert.is_true(r1:is_ok())
+    assert.are.equal(10, r1:unwrap())
+
+    assert.is_true(r2:is_ok())
+    assert.are.equal(20, r2:unwrap())
+  end)
+
+  it('should not modify the original result object when using or_else', function()
+    local r1 = Result.err('error')
+    local r2 = r1:or_else(function() return 10 end)
+
+    assert.is_true(r1:is_err())
+    assert.are.equal('error', r1:unwrap_err().message)
+
+    assert.is_true(r2:is_ok())
+    assert.are.equal(10, r2:unwrap())
+  end)
 end)

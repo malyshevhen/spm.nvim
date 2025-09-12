@@ -11,14 +11,20 @@ local function parse(content)
     return Result.err(string.format('Cannot parse TOML.'))
   end
 
-  local success, result = pcall(toml.parse, content)
-  if not success or type(result) ~= 'table' or next(result) == nil then
-    logger.error(string.format('Cannot parse TOML: %s', result), 'TomlParser')
-    return Result.err(string.format('Cannot parse TOML: %s', result))
+  local res = Result.try(function() return toml.parse(content) end)
+  if res:is_err() then
+    local msg = string.format('Cannot parse TOML: %s', res:unwrap_err())
+    logger.error(msg, 'TomlParser')
+    return res:map_err(function(err) return 'Cannot parse TOML: ' .. err end)
+  end
+
+  if type(res:unwrap()) ~= 'table' then
+    return Result.err('TOML content is not a table')
   end
 
   logger.debug('Successfully parsed TOML content', 'TomlParser')
-  return Result.ok(result)
+
+  return res
 end
 
 ---Encodes a Lua table to TOML format (using vendor library)
