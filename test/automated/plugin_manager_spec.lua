@@ -4,6 +4,7 @@ local lock_manager = require('spm.core.lock_manager')
 local plugin_types = require('spm.core.plugin_types')
 local toml_parser = require('spm.lib.toml_parser')
 local PluginConfig = plugin_types.PluginConfig
+local Path = require('plenary.path')
 
 -- Helper function to convert plain table to PluginConfig
 local function create_plugin_config(data)
@@ -11,33 +12,33 @@ local function create_plugin_config(data)
   return data
 end
 
--- TODO: test are flaky, so need to be fixed
 describe('plugin_manager integration', function()
-  local test_plugins_toml_path
-  local test_lock_file_path
+  local files_to_clean = {}
 
-  before_each(function()
-    test_plugins_toml_path = 'test/fixtures/test_plugins_integration.toml'
-    test_lock_file_path = 'test/fixtures/test_integration.lock'
-
-    -- Create test files
-    local plugins_file = io.open(test_plugins_toml_path, 'w')
-    if plugins_file then
-      plugins_file:write('[[plugins]]\n')
-      plugins_file:write('name = "test-plugin"\n')
-      plugins_file:write('src = "https://github.com/test/plugin"\n')
-      plugins_file:close()
+  local function create_temp_file(content)
+    local temp_file = Path:new(vim.fn.tempname())
+    if content then
+      temp_file:write(content, 'w')
     end
-  end)
+    table.insert(files_to_clean, temp_file)
+    return temp_file.filename
+  end
 
   after_each(function()
-    -- Clean up test files
-    os.remove(test_plugins_toml_path)
-    os.remove(test_lock_file_path)
+    for _, file in ipairs(files_to_clean) do
+      local success, err = pcall(function() file:rm() end)
+      if not success then
+        print('Failed to clean up file: ' .. tostring(err))
+      end
+    end
+    files_to_clean = {}
   end)
 
   describe('configuration parsing workflow', function()
     it('should parse valid TOML configuration', function()
+      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local test_plugins_toml_path = create_temp_file(content)
+
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(result:is_ok())
 
@@ -50,6 +51,9 @@ describe('plugin_manager integration', function()
     end)
 
     it('should validate parsed configuration', function()
+      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local test_plugins_toml_path = create_temp_file(content)
+
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(result:is_ok())
 
@@ -61,15 +65,8 @@ describe('plugin_manager integration', function()
     end)
 
     it('should flatten plugins including dependencies', function()
-      -- Create config with dependencies
-      local deps_file = io.open(test_plugins_toml_path, 'w')
-      if deps_file then
-        deps_file:write('[[plugins]]\n')
-        deps_file:write('name = "main-plugin"\n')
-        deps_file:write('src = "https://github.com/test/main"\n')
-        deps_file:write('dependencies = ["https://github.com/test/dep"]\n')
-        deps_file:close()
-      end
+      local content = '[[plugins]]\nname = "main-plugin"\nsrc = "https://github.com/test/main"\ndependencies = ["https://github.com/test/dep"]\n'
+      local test_plugins_toml_path = create_temp_file(content)
 
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(result:is_ok())
@@ -87,6 +84,7 @@ describe('plugin_manager integration', function()
 
   describe('lock file management workflow', function()
     it('should create and read lock files', function()
+      local test_lock_file_path = create_temp_file(nil)
       local lock_data = {
         hash = 'test_hash',
         plugins = {
@@ -137,6 +135,10 @@ describe('plugin_manager integration', function()
 
   describe('complete workflow integration', function()
     it('should handle a complete parse -> validate -> flatten -> lock workflow', function()
+      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local test_plugins_toml_path = create_temp_file(content)
+      local test_lock_file_path = create_temp_file(nil)
+
       -- 1. Parse configuration
       local parse_result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(parse_result:is_ok())
@@ -190,23 +192,19 @@ describe('plugin_manager integration', function()
     end)
 
     it('should handle complex configurations with language servers and filetypes', function()
-      -- Create complex configuration
-      local complex_file = io.open(test_plugins_toml_path, 'w')
-      if complex_file then
-        complex_file:write('[[plugins]]\n')
-        complex_file:write('name = "plugin1"\n')
-        complex_file:write('src = "https://github.com/test/plugin1"\n\n')
-        complex_file:write('[[plugins]]\n')
-        complex_file:write('name = "plugin2"\n')
-        complex_file:write('src = "https://github.com/test/plugin2"\n')
-        complex_file:write('version = "stable"\n\n')
-        complex_file:write('[language_servers]\n')
-        complex_file:write('servers = ["lua_ls", "gopls"]\n\n')
-        complex_file:write('[filetypes]\n')
-        complex_file:write('[filetypes.pattern]\n')
-        complex_file:write("'*.test' = 'testfiletype'\n")
-        complex_file:close()
-      end
+      local content = '[[plugins]]\n'
+        .. 'name = "plugin1"\n'
+        .. 'src = "https://github.com/test/plugin1"\n\n'
+        .. '[[plugins]]\n'
+        .. 'name = "plugin2"\n'
+        .. 'src = "https://github.com/test/plugin2"\n'
+        .. 'version = "stable"\n\n'
+        .. '[language_servers]\n'
+        .. 'servers = ["lua_ls", "gopls"]\n\n'
+        .. '[filetypes]\n'
+        .. '[filetypes.pattern]\n'
+        .. "'*.test' = 'testfiletype'\n"
+      local test_plugins_toml_path = create_temp_file(content)
 
       local parse_result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(parse_result:is_ok())
@@ -226,12 +224,8 @@ describe('plugin_manager integration', function()
     end)
 
     it('should handle malformed TOML files', function()
-      local malformed_file = io.open(test_plugins_toml_path, 'w')
-      if malformed_file then
-        malformed_file:write('[[plugins]\n') -- Missing closing bracket
-        malformed_file:write('name = "broken\n') -- Missing closing quote
-        malformed_file:close()
-      end
+      local content = '[[plugins]\nname = "broken"\n'
+      local test_plugins_toml_path = create_temp_file(content)
 
       local success, result = pcall(
         function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
@@ -246,14 +240,8 @@ describe('plugin_manager integration', function()
     end)
 
     it('should validate plugin specifications', function()
-      -- Create invalid plugin config
-      local invalid_file = io.open(test_plugins_toml_path, 'w')
-      if invalid_file then
-        invalid_file:write('[[plugins]]\n')
-        invalid_file:write('name = "invalid-plugin"\n')
-        invalid_file:write('src = "not-a-valid-url"\n') -- Invalid URL
-        invalid_file:close()
-      end
+      local content = '[[plugins]]\nname = "invalid-plugin"\nsrc = "not-a-valid-url"\n'
+      local test_plugins_toml_path = create_temp_file(content)
 
       local success, parse_result = pcall(
         function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
