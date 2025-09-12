@@ -2,7 +2,7 @@ local toml_parser = require('spm.lib.toml_parser')
 
 describe('toml_parser', function()
   it('should parse a valid toml file', function()
-    local content = [=[
+    local content = [==[
 [[plugins]]
 name = "alpha-nvim"
 src  = "https://github.com/goolord/alpha-nvim"
@@ -18,7 +18,7 @@ servers = ["lua_ls"]
 [filetypes]
 [filetypes.pattern]
 'docker-compose%.yml' = 'yaml.docker-compose'
-]=]
+]==]
 
     local result = toml_parser.parse(content)
     assert.is_true(result:is_ok())
@@ -54,7 +54,7 @@ servers = ["lua_ls"]
     local invalid_content = '[[plugins]\nname = "broken"\n' -- Missing closing bracket
     local result = toml_parser.parse(invalid_content)
     assert.is_true(result:is_err())
-    assert.truthy(result.error.message:find('Cannot parse file: test/fixtures/invalid_toml.toml'))
+    assert.truthy(result.error.message:find('Cannot parse TOML'))
   end)
 
   it('should encode a lua table to a toml string', function()
@@ -72,56 +72,5 @@ servers = ["lua_ls"]
 
     assert.is_true(result:is_err())
     assert.are.same('Input must be a table', result.error.message)
-  end)
-
-  it('should parse a valid plugins.toml file', function()
-    local result = toml_parser.parse_plugins_toml('test/fixtures/valid_toml.toml')
-    assert.is_true(result:is_ok())
-    local config = result:unwrap()
-    assert.are.same({
-      filetypes = {
-        pattern = {
-          ['docker-compose%.yml'] = 'yaml.docker-compose',
-        },
-      },
-      language_servers = {
-        servers = {
-          'lua_ls',
-        },
-      },
-      plugins = {
-        {
-          name = 'alpha-nvim',
-          src = 'https://github.com/goolord/alpha-nvim',
-        },
-        {
-          name = 'neotest',
-          src = 'https://github.com/nvim-neotest/neotest',
-          dependencies = {
-            'https://github.com/nvim-lua/plenary.nvim',
-          },
-        },
-      },
-    }, config)
-  end)
-
-  it('should return an error if the file does not exist', function()
-    local result = toml_parser.parse_plugins_toml('test/fixtures/non_existent_file.toml')
-
-    assert.is_true(result:is_err())
-    assert.are.same('Cannot read file: test/fixtures/non_existent_file.toml', result.error.message)
-  end)
-
-  it('should return an error if the file does not contain a [[plugins]] section', function()
-    local result = toml_parser.parse_plugins_toml('test/fixtures/no_plugins.toml')
-
-    assert.is_true(result:is_err())
-    assert.truthy(result.error.message:find('Cannot parse file: test/fixtures/no_plugins.toml'))
-  end)
-
-  it('should return a warning if the [[plugins]] section is empty', function()
-    local result = toml_parser.parse_plugins_toml('test/fixtures/empty_plugins.toml')
-
-    assert.is_true(result:is_ok())
   end)
 end)

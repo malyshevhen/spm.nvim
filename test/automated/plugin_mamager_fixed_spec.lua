@@ -1,5 +1,6 @@
 local Result = require('spm.lib.error').Result
 local crypto = require('spm.lib.crypto')
+local fs = require('spm.lib.fs')
 local lock_manager = require('spm.core.lock_manager')
 local plugin_types = require('spm.core.plugin_types')
 local toml_parser = require('spm.lib.toml_parser')
@@ -44,11 +45,13 @@ describe('plugin_manager integration', function()
     package.loaded['spm.lib.toml_parser'] = nil
     package.loaded['spm.core.lock_manager'] = nil
     package.loaded['spm.lib.crypto'] = nil
+    package.loaded['spm.lib.fs'] = nil
 
     -- Reload modules with fresh state
     toml_parser = require('spm.lib.toml_parser')
     lock_manager = require('spm.core.lock_manager')
     crypto = require('spm.lib.crypto')
+    fs = require('spm.lib.fs')
   end)
 
   after_each(function()
@@ -88,27 +91,29 @@ describe('plugin_manager integration', function()
     return temp_file.filename
   end
 
+  local function parse_plugins_toml(path) return fs.read_file(path):flat_map(toml_parser.parse) end
+
   -- Helper function to setup standard test configuration
   local function setup_test_config()
-    local content = [=[
+    local content = [==[
 [[plugins]]
 name = "test-plugin"
 src = "https://github.com/test/plugin"
-]=]
+]==]
     return create_temp_file(content)
   end
 
   describe('configuration parsing workflow', function()
     it('should parse valid TOML configuration', function()
-      local content = [=[
+      local content = [==[
 [[plugins]]
 name = "test-plugin"
 src = "https://github.com/test/plugin"
-]=]
+]==]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = retry_operation(
-        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+        function() return parse_plugins_toml(test_plugins_toml_path) end
       )
 
       assert.is_true(result:is_ok())
@@ -125,29 +130,29 @@ src = "https://github.com/test/plugin"
       local test_plugins_toml_path = setup_test_config()
 
       local result = retry_operation(
-        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+        function() return parse_plugins_toml(test_plugins_toml_path) end
       )
       assert.is_true(result:is_ok())
 
       local raw_config = result:unwrap()
       local config = create_plugin_config(raw_config)
-      assert.is_function(config.validate)
+      assert.is_function(config.valid)
 
-      local validation_result = config:validate()
+      local validation_result = config:valid()
       assert.is_true(validation_result:is_ok())
     end)
 
     it('should flatten plugins including dependencies', function()
-      local content = [=[
+      local content = [==[
 [[plugins]]
 name = "main-plugin"
 src = "https://github.com/test/main"
 dependencies = ["https://github.com/test/dep"]
-]=]
+]==]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = retry_operation(
-        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+        function() return parse_plugins_toml(test_plugins_toml_path) end
       )
       assert.is_true(result:is_ok())
 
@@ -224,7 +229,7 @@ dependencies = ["https://github.com/test/dep"]
 
       -- 1. Parse configuration with retry
       local parse_result = retry_operation(
-        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+        function() return parse_plugins_toml(test_plugins_toml_path) end
       )
       assert.is_true(parse_result:is_ok())
 
@@ -232,7 +237,7 @@ dependencies = ["https://github.com/test/dep"]
       local config = create_plugin_config(raw_config)
 
       -- 2. Validate configuration
-      local validation_result = config:validate()
+      local validation_result = config:valid()
       assert.is_true(validation_result:is_ok())
 
       -- 3. Flatten plugins
@@ -283,7 +288,7 @@ dependencies = ["https://github.com/test/dep"]
     end)
 
     it('should handle complex configurations with language servers and filetypes', function()
-      local content = [=[
+      local content = [==[
 [[plugins]]
 name = "plugin1"
 src = "https://github.com/test/plugin1"
@@ -300,11 +305,11 @@ servers = ["lua_ls", "gopls"]
 
 [filetypes.pattern]
 "*.test" = "testfiletype"
-]=]
+]==]
       local test_plugins_toml_path = create_temp_file(content)
 
       local parse_result = retry_operation(
-        function() return toml_parser.parse_plugins_toml(test_plugins_toml_path) end
+        function() return parse_plugins_toml(test_plugins_toml_path) end
       )
       assert.is_true(parse_result:is_ok())
 
@@ -318,7 +323,7 @@ servers = ["lua_ls", "gopls"]
 
   describe('error handling', function()
     it('should handle non-existent files gracefully', function()
-      local result = toml_parser.parse_plugins_toml('non_existent_file.toml')
+      local result = parse_plugins_toml('non_existent_file.toml')
       assert.is_true(result:is_err())
 
       local error_msg = result:unwrap_err().message
@@ -329,7 +334,7 @@ servers = ["lua_ls", "gopls"]
       local content = '[[plugins]\nname = "broken"\n' -- Missing closing bracket
       local test_plugins_toml_path = create_temp_file(content)
 
-      local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
+      local result = parse_plugins_toml(test_plugins_toml_path)
       assert.is_true(result:is_err())
 
       local error_msg = result:unwrap_err().message
@@ -337,19 +342,19 @@ servers = ["lua_ls", "gopls"]
     end)
 
     it('should validate plugin specifications', function()
-      local content = [=[
+      local content = [==[
 [[plugins]]
 name = "invalid-plugin"
 src = "not-a-valid-url"
-]=]
+]==]
       local test_plugins_toml_path = create_temp_file(content)
 
-      local parse_result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
+      local parse_result = parse_plugins_toml(test_plugins_toml_path)
 
       if parse_result:is_ok() then
         local raw_config = parse_result:unwrap()
         local config = create_plugin_config(raw_config)
-        local validation_result = config:validate()
+        local validation_result = config:valid()
         assert.is_true(validation_result:is_err())
 
         local error_data = validation_result:unwrap_err()
@@ -371,3 +376,4 @@ src = "not-a-valid-url"
     end)
   end)
 end)
+

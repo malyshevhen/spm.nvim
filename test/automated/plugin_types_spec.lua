@@ -2,13 +2,13 @@ local PluginConfig = require('spm.core.plugin_types').PluginConfig
 local PluginSpec = require('spm.core.plugin_types').PluginSpec
 
 describe('plugin_types', function()
-  describe('PluginSpec:validate', function()
+  describe('PluginSpec:valid', function()
     it('should return true for a valid plugin', function()
       local valid_plugin = {
         src = 'https://github.com/test/test',
       }
       setmetatable(valid_plugin, PluginSpec)
-      local result = valid_plugin:validate()
+      local result = valid_plugin:valid()
       assert.is_true(result:is_ok())
     end)
 
@@ -29,13 +29,13 @@ describe('plugin_types', function()
         src = 'http://github.com/test/test',
       }
       setmetatable(invalid_plugin, PluginSpec)
-      local result = invalid_plugin:validate()
+      local result = invalid_plugin:valid()
       assert.is_true(result:is_err())
       assert.are.same("Plugin must have a 'src' field with a valid HTTPS URL", result.error.message)
     end)
   end)
 
-  describe('PluginConfig:validate', function()
+  describe('PluginConfig:valid', function()
     it('should return true for a valid config', function()
       local valid_config = {
         plugins = {
@@ -45,14 +45,14 @@ describe('plugin_types', function()
         },
       }
       setmetatable(valid_config, PluginConfig)
-      local result = valid_config:validate()
+      local result = valid_config:valid()
       assert.is_true(result:is_ok())
     end)
 
     it('should return an error if the config is not a table', function()
       local invalid_config = 'not a table'
       setmetatable(
-        { validate = PluginConfig.valid },
+        { valid = PluginConfig.valid },
         { __index = function() return invalid_config end }
       )
       ---@diagnostic disable-next-line: param-type-mismatch
@@ -66,7 +66,7 @@ describe('plugin_types', function()
         plugins = 'not an array',
       }
       setmetatable(invalid_config, PluginConfig)
-      local result = invalid_config:validate()
+      local result = invalid_config:valid()
       assert.is_true(result:is_err())
       assert.are.same("Config must have a 'plugins' field of type array", result.error.message)
     end)
@@ -80,7 +80,7 @@ describe('plugin_types', function()
         },
       }
       setmetatable(invalid_config, PluginConfig)
-      local result = invalid_config:validate()
+      local result = invalid_config:valid()
       assert.is_true(result:is_err())
       assert.are.same(
         "Plugin at index 1: Plugin must have a 'src' field with a valid HTTPS URL",

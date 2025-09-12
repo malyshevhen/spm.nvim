@@ -1,5 +1,6 @@
 local crypto = require('spm.lib.crypto')
 local file_sourcer = require('spm.lib.file_sourcer')
+local fs = require('spm.lib.fs')
 local lock_manager = require('spm.core.lock_manager')
 local logger = require('spm.lib.logger')
 local plugin_installer = require('spm.core.plugin_installer')
@@ -8,66 +9,48 @@ local toml_parser = require('spm.lib.toml_parser')
 local PluginConfig = plugin_types.PluginConfig
 local Result = require('spm.lib.error').Result
 
----Reads file content
----@param file_path string
----@return spm.Result<string>
-local function read_file(file_path)
-  return Result.try(function()
-    local file, read_err = io.open(file_path, 'r')
-    if not file then
-      error('Cannot open file: ' .. (read_err or 'Unknown error'))
-    end
-
-    ---@type string
-    local content = file:read('*a')
-    local ok, close_err = file:close()
-    if not ok then
-      error('Cannot close file: ' .. (close_err or 'Unknown error'))
-    end
-
-    return content
-  end)
-end
-
 ---Parses the plugins configuration file
 ---@param plugins_toml_path string Path to the plugins.toml file
 ---@return spm.Result<spm.PluginConfig>
 local function parse_config(plugins_toml_path)
   logger.info(string.format('Parsing configuration: %s', plugins_toml_path), 'PluginManager')
-  return read_file(plugins_toml_path):flat_map(toml_parser.parse):flat_map(PluginConfig.create)
+  return fs.read_file(plugins_toml_path):flat_map(toml_parser.parse):flat_map(PluginConfig.create)
 end
 
 ---@param config spm.Config
 ---@param force_reinstall boolean?
 ---@return spm.Result<spm.PluginConfig>
 local function get_plugin_config(config, force_reinstall)
-  local parse_plugins_file = function(plugins_toml_content)
-    return function(lock_data)
-      local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
-      if force_reinstall or is_stale then
-        logger.info('Lock file is stale or missing. Installing/updating plugins.', 'PluginManager')
-        return parse_config(config.plugins_toml_path)
-      elseif lock_data then
-        logger.info('Lock file is up to date. Verifying plugins from lock file.', 'PluginManager')
+  local plugins_toml_content_result = fs.read_file(config.plugins_toml_path)
+  if plugins_toml_content_result:is_err() then
+    return plugins_toml_content_result
+  end
+  local plugins_toml_content = plugins_toml_content_result:unwrap()
 
-        return Result.ok(PluginConfig.create({
-          plugins = lock_data.plugins or {},
-          language_servers = lock_data.language_servers or {},
-          filetypes = lock_data.filetypes or {},
-        }))
-      else
-        return Result.err('Failed to read lock file')
-      end
-    end
+  local lock_data_result = lock_manager.read(config.lock_file_path)
+  if lock_data_result:is_err() then
+    return lock_data_result
   end
 
-  return read_file(config.plugins_toml_path):flat_map(
-    function(plugins_toml_content)
-      return lock_manager
-        .read(config.lock_file_path)
-        :flat_map(parse_plugins_file(plugins_toml_content))
-    end
-  )
+  local lock_data = lock_data_result:unwrap()
+  if not lock_data or not lock_data.hash then
+    logger.info('Lock file is missing. Installing/updating plugins.', 'PluginManager')
+    return parse_config(config.plugins_toml_path)
+  end
+
+  local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
+
+  if force_reinstall or is_stale then
+    logger.info('Lock file is stale or missing. Installing/updating plugins.', 'PluginManager')
+    return parse_config(config.plugins_toml_path)
+  else
+    logger.info('Lock file is up to date. Verifying plugins from lock file.', 'PluginManager')
+    return PluginConfig.create({
+      plugins = lock_data.plugins or {},
+      language_servers = lock_data.language_servers or {},
+      filetypes = lock_data.filetypes or {},
+    })
+  end
 end
 
 ---@param plugins spm.PluginSpec[]
@@ -101,15 +84,15 @@ local function update_lock_file(config, parsed_config, flattened_plugins)
     }
   end
 
-  ---@type fun(lock_data: table): spm.Result<string>
+  ---@type fun(lock_data: table): spm.Result<boolean>
   local write_lock_file = function(new_lock_data)
     return lock_manager.write(config.lock_file_path, new_lock_data)
   end
 
-  return read_file(config.plugins_toml_path)
-    :map(crypto.generate_hash)
-    :map(build_lock_data)
-    :map(write_lock_file)
+  return fs.read_file(config.plugins_toml_path)
+    :flat_map(crypto.generate_hash)
+    :flat_map(build_lock_data)
+    :flat_map(write_lock_file)
 end
 
 ---Sources configuration files in the specified order
@@ -193,7 +176,7 @@ local function setup(config, force_reinstall)
 
   local flattened_plugins = parsed_config:flatten_plugins()
 
-  local content_result = read_file(config.plugins_toml_path)
+  local content_result = fs.read_file(config.plugins_toml_path)
   if content_result:is_err() then
     return content_result
   end

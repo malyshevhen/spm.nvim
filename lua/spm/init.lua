@@ -8,11 +8,6 @@ local spm = {
   plugin_manager = require('spm.plugin_manager'),
 }
 
----Sets up logging based on configuration
----@param config spm.Config
----@return spm.Config
-local function setup_logging(config) return config end
-
 ---Main initialization function
 ---@param user_config spm.Config? Configuration options
 function spm.setup(user_config)

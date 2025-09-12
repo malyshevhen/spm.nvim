@@ -8,7 +8,7 @@ local Result = require('spm.lib.error').Result
 local function parse(content)
   logger.debug(string.format('Parsing file: %s', content), 'TomlParser')
   if not content or type(content) ~= 'string' then
-    return Result.err(string.format('Cannot read file.'))
+    return Result.err(string.format('Cannot parse TOML.'))
   end
 
   local success, result = pcall(toml.parse, content)

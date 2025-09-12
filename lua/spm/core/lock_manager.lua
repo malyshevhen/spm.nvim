@@ -8,11 +8,21 @@ local Result = require('spm.lib.error').Result
 ---@param lock_file_path string
 ---@return spm.Result<table>
 local function read(lock_file_path)
-  if vim.fn.filereadable(lock_file_path) == 0 then
-    logger.info('Lock file not found at: ' .. lock_file_path, 'LockManager')
+  if vim.fn.filereadable(lock_file_path) ~= 1 then
     return Result.ok(nil)
   end
-  return fs.read_file(lock_file_path):flat_map(toml_parser.parse)
+
+  local content_result = fs.read_file(lock_file_path)
+  if content_result:is_err() then
+    return content_result
+  end
+
+  local content = content_result:unwrap()
+  if content == '' then
+    return Result.ok({})
+  end
+
+  return toml_parser.parse(content)
 end
 
 ---Writes data to the lock file
