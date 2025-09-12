@@ -1,22 +1,22 @@
 local logger = require('spm.lib.logger')
 local Result = require('spm.lib.error').Result
 
----@class Installer
+---@class spm.Installer
 local installer = {}
 
----@class PackInstallerOptions
+---@class spm.InstallerOptions
 ---@field confirm boolean Whether to ask user to confirm installation
 ---@field load boolean Whether to load plugins after installation
 
 ---Default options for pack installation
----@type PackInstallerOptions
+---@type spm.InstallerOptions
 local DEFAULT_OPTIONS = {
   confirm = false,
   load = true,
 }
 
 ---Converts a plugin spec to vim.pack format
----@param plugin PluginSpec The plugin to convert
+---@param plugin spm.PluginSpec The plugin to convert
 ---@return table pack_spec The vim.pack specification
 local function to_pack_spec(plugin)
   return {
@@ -27,7 +27,7 @@ local function to_pack_spec(plugin)
 end
 
 ---Validates that vim.pack is available
----@return Result<nil>
+---@return spm.Result<nil>
 local function validate_vim_pack()
   if not vim.pack or type(vim.pack.add) ~= 'function' then
     return Result.err('vim.pack is not available - requires Neovim 0.12+')
@@ -36,9 +36,9 @@ local function validate_vim_pack()
 end
 
 ---Installs plugins using vim.pack.add
----@param plugins PluginSpec[] List of plugins to install
----@param options PackInstallerOptions? Installation options
----@return Result<nil>
+---@param plugins spm.PluginSpec[] List of plugins to install
+---@param options spm.InstallerOptions? Installation options
+---@return spm.Result<nil>
 local function install(plugins, options)
   if not plugins or #plugins == 0 then
     return Result.ok(nil) -- Nothing to install is considered success

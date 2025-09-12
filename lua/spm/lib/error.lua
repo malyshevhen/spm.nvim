@@ -42,15 +42,15 @@
 -- end
 -- ```
 
----@class Error
+---@class spm.Error
 ---@field message string
 ---@field code string?
 ---@field stack string?
 
 ---@generic T
----@class Result<T>
+---@class spm.Result<T>
 ---@field success boolean
----@field error Error?
+---@field error spm.Error?
 ---@field result `T`?
 local Result = {}
 Result.__index = Result
@@ -59,8 +59,8 @@ Result.__index = Result
 ---@generic T
 ---@param success boolean
 ---@param result T?
----@param error Error?
----@return Result<T>
+---@param error spm.Error?
+---@return spm.Result<T>
 function Result.new(success, result, error)
   return setmetatable({
     success = success,
@@ -72,13 +72,13 @@ end
 ---Create a successful result
 ---@generic T
 ---@param result T
----@return Result<T>
+---@return spm.Result<T>
 function Result.ok(result) return Result.new(true, result, nil) end
 
 ---Create an error result
 ---@generic T
----@param error Error|string
----@return Result<T>
+---@param error spm.Error|string
+---@return spm.Result<T>
 function Result.err(error)
   if type(error) == 'string' then
     error = { message = error }
@@ -113,13 +113,13 @@ end
 function Result:unwrap_or(default) return self.success and self.result or default end
 
 ---Get the error value
----@return Error
+---@return spm.Error
 function Result:unwrap_err() return self.error end
 
 ---Map the result value if successful
 ---@generic T, U
 ---@param fn fun(value: T): U
----@return Result<U>
+---@return spm.Result<U>
 function Result:map(fn)
   if not self.success then
     return Result.err(self.error)
@@ -136,7 +136,7 @@ end
 ---Map the error message value if unsuccessful
 ---@generic T
 ---@param fn fun(error: string): T
----@return Result<T>
+---@return spm.Result<T>
 function Result:map_err(fn)
   if self.success then
     return Result.ok(self.result)
@@ -151,8 +151,8 @@ end
 
 ---FlatMap the result value if successful
 ---@generic T, U
----@param fn fun(value: T): Result<U>
----@return Result<U>
+---@param fn fun(value: T): spm.Result<U>
+---@return spm.Result<U>
 function Result:flat_map(fn)
   if not self.success then
     return Result.err(self.error)
@@ -174,7 +174,7 @@ end
 ---Handle error case
 ---@generic T
 ---@param fn fun(): T
----@return Result<T>
+---@return spm.Result<T>
 function Result:or_else(fn)
   if self.success then
     return self
@@ -191,7 +191,7 @@ end
 ---Create Result from a function that might throw
 ---@generic T
 ---@param fn fun(): T
----@return Result<T>
+---@return spm.Result<T>
 function Result.try(fn)
   local ok, result = pcall(fn)
   if not ok then
@@ -205,7 +205,7 @@ end
 ---@generic T
 ---@param success boolean
 ---@param value_or_error T|string
----@return Result<T>
+---@return spm.Result<T>
 function Result.from_tuple(success, value_or_error)
   if not success then
     return Result.err(

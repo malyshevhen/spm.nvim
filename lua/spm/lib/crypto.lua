@@ -2,7 +2,7 @@ local Result = require('spm.lib.error').Result
 
 ---Generates a SHA256 hash for the given content
 ---@param content string The content to hash
----@return Result<string>
+---@return spm.Result<string>
 local function generate_hash(content)
   if type(content) ~= 'string' then
     return Result.err('Content must be a string')

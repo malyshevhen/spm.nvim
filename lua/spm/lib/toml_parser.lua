@@ -4,7 +4,7 @@ local Result = require('spm.lib.error').Result
 
 ---Safely parses TOML content using the vendor toml.lua library
 ---@param content string The TOML content to parse
----@return Result<table>
+---@return spm.Result<table>
 local function safe_parse(content)
   local success, result = pcall(toml.parse, content)
   if not success or type(result) ~= 'table' or next(result) == nil then
@@ -16,7 +16,7 @@ end
 
 ---Reads and parses a TOML file
 ---@param filepath string Path to the TOML file
----@return Result<table>
+---@return spm.Result<table>
 local function parse_file(filepath)
   logger.debug(string.format('Parsing file: %s', filepath), 'TomlParser')
   if type(filepath) ~= 'string' or vim.fn.filereadable(filepath) == 0 then
@@ -46,7 +46,7 @@ end
 
 ---Parses plugins.toml specifically and returns a PluginConfig
 ---@param filepath string Path to the plugins.toml file
----@return Result<PluginConfig>
+---@return spm.Result<PluginConfig>
 local function parse_plugins_toml(filepath)
   logger.debug(string.format('Parsing plugins.toml: %s', filepath), 'TomlParser')
 
@@ -80,7 +80,7 @@ end
 
 ---Encodes a Lua table to TOML format (using vendor library)
 ---@param value table The table to encode
----@return Result<string>
+---@return spm.Result<string>
 local function encode(value)
   if type(value) ~= 'table' then
     return Result.err('Input must be a table')

@@ -1,4 +1,4 @@
----@class KeymapSpec
+---@class spm.KeymapSpec
 ---@field map string The keymap key combination
 ---@field cmd string|function The command to execute
 ---@field desc string? Description for the keymap
@@ -28,7 +28,7 @@ function KeymapSpec:validate()
 end
 
 ---Sets a single keymap using vim.keymap.set
----@param self KeymapSpec The keymap to set
+---@param self spm.KeymapSpec The keymap to set
 ---@return boolean success True if the keymap was set successfully
 function KeymapSpec:set_single_keymap()
   local valid, err = self:validate()
@@ -71,7 +71,7 @@ function KeymapSpec:set_single_keymap()
 end
 
 ---Maps keymaps immediately using vim.keymap.set
----@param keymaps KeymapSpec|KeymapSpec[] Single keymap or array of keymaps
+---@param keymaps spm.KeymapSpec|spm.KeymapSpec[] Single keymap or array of keymaps
 ---@return number success_count Number of successfully set keymaps
 ---@return number total_count Total number of keymaps attempted
 local function map(keymaps)

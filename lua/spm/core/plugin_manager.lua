@@ -8,7 +8,7 @@ local Result = require('spm.lib.error').Result
 
 ---Reads file content
 ---@param file_path string
----@return Result<string>
+---@return spm.Result<string>
 local function read_file(file_path)
   return Result.try(function()
     local file, read_err = io.open(file_path, 'r')
@@ -29,11 +29,11 @@ end
 
 ---Parses the plugins configuration file
 ---@param plugins_toml_path string Path to the plugins.toml file
----@return Result<PluginConfig>
+---@return spm.Result<PluginConfig>
 local function parse_config(plugins_toml_path)
   logger.info(string.format('Parsing configuration: %s', plugins_toml_path), 'PluginManager')
 
-  ---@type fun(config: PluginConfig): Result<PluginConfig>
+  ---@type fun(config: PluginConfig): spm.Result<PluginConfig>
   local validate_config = function(config)
     local result = config:validate()
     if result:is_ok() then
@@ -46,9 +46,9 @@ local function parse_config(plugins_toml_path)
   return toml_parser.parse_plugins_toml(plugins_toml_path):flat_map(validate_config)
 end
 
----@param config SimplePMConfig
+---@param config spm.Config
 ---@param force_reinstall boolean?
----@return Result<PluginConfig>
+---@return spm.Result<PluginConfig>
 local function get_plugin_config(config, force_reinstall)
   local parse_plugins_file = function(plugins_toml_content)
     return function(lock_data)
@@ -79,10 +79,10 @@ local function get_plugin_config(config, force_reinstall)
   )
 end
 
----@param plugins PluginSpec[]
+---@param plugins spm.PluginSpec[]
 ---@param force_reinstall boolean?
 ---@param is_stale boolean
----@return Result<nil>
+---@return spm.Result<nil>
 local function install_plugins(plugins, force_reinstall, is_stale)
   local log_message = string.format('Verifying and loading %d plugins...', #plugins)
   if force_reinstall or is_stale then
@@ -93,14 +93,14 @@ local function install_plugins(plugins, force_reinstall, is_stale)
   return plugin_installer.install(plugins)
 end
 
----@param config SimplePMConfig
+---@param config spm.Config
 ---@param parsed_config PluginConfig
----@param flattened_plugins PluginSpec[]
----@return Result<nil>
+---@param flattened_plugins spm.PluginSpec[]
+---@return spm.Result<nil>
 local function update_lock_file(config, parsed_config, flattened_plugins)
   logger.info('Updating lock file now.', 'PluginManager')
 
-  ---@type fun(plugins_toml_hash: string): Result<table>
+  ---@type fun(plugins_toml_hash: string): spm.Result<table>
   local build_lock_data = function(hash)
     return {
       hash = hash,
@@ -110,7 +110,7 @@ local function update_lock_file(config, parsed_config, flattened_plugins)
     }
   end
 
-  ---@type fun(lock_data: table): Result<string>
+  ---@type fun(lock_data: table): spm.Result<string>
   local write_lock_file = function(new_lock_data)
     return lock_manager.write(config.lock_file_path, new_lock_data)
   end
@@ -124,7 +124,7 @@ end
 ---Sources configuration files in the specified order
 ---@param config_root string Root directory of the neovim config
 ---@param options table? Sourcing options
----@return Result<nil>
+---@return spm.Result<nil>
 local function source_configs(config_root, options)
   options = vim.tbl_deep_extend(
     'force',
@@ -133,7 +133,7 @@ local function source_configs(config_root, options)
   )
 
   local overall_success = true
-  ---@type Error[]
+  ---@type spm.Error[]
   local all_errors = {}
   local total_files_sourced = 0
 
@@ -186,10 +186,10 @@ local function source_configs(config_root, options)
 end
 
 ---Main method to install plugins and configure the system
----@type fun(config: SimplePMConfig, force_reinstall: boolean?): Result<nil>
----@param config SimplePMConfig The full configuration object
+---@type fun(config: spm.Config, force_reinstall: boolean?): spm.Result<nil>
+---@param config spm.Config The full configuration object
 ---@param force_reinstall boolean? Whether to ignore the lock file and force reinstall
----@return Result<nil>
+---@return spm.Result<nil>
 local function setup(config, force_reinstall)
   logger.info('--- Starting PluginManager Setup ---', 'PluginManager')
 
@@ -241,12 +241,12 @@ local function setup(config, force_reinstall)
 end
 
 ---Debug method to show parsed plugins without installing
----@type fun(plugins_toml_path: string): Result<PluginSpec[]>
+---@type fun(plugins_toml_path: string): spm.Result<spm.PluginSpec[]>
 ---@param plugins_toml_path string Path to the plugins.toml file
----@return Result<PluginSpec[]>
+---@return spm.Result<spm.PluginSpec[]>
 local function debug_plugins(plugins_toml_path)
   -- Logs the flattened plugins
-  ---@type fun(flattened_plugins: PluginSpec[]): PluginSpec[]
+  ---@type fun(flattened_plugins: spm.PluginSpec[]): spm.PluginSpec[]
   local log_flatten_plugins = function(flattened_plugins)
     logger.info(string.format('Found %d plugins', #flattened_plugins), 'PluginManager')
     for i, plugin in ipairs(flattened_plugins) do

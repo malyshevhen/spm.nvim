@@ -1,4 +1,4 @@
----@enum LogLevel
+---@enum spm.LogLevel
 local LOG_LEVELS = {
   DEBUG = 1,
   INFO = 2,
@@ -6,13 +6,13 @@ local LOG_LEVELS = {
   ERROR = 4,
 }
 
----@class LoggerConfig
+---@class spm.LoggerConfig
 ---@field enabled boolean Whether to enable logging
----@field level LogLevel The minimum log level to show
+---@field level spm.LogLevel The minimum log level to show
 ---@field prefix string The prefix to add to all log messages
 ---@field show_notifications boolean Whether to show vim.notify messages
 
----@type LoggerConfig
+---@type spm.LoggerConfig
 local config = {
   enabled = true,
   level = LOG_LEVELS.INFO,
@@ -31,13 +31,13 @@ local VIM_LOG_LEVELS = {
   [LOG_LEVELS.ERROR] = vim.log.levels.ERROR,
 }
 
----@class Logger
----@field private config LoggerConfig
+---@class spm.Logger
+---@field private config spm.LoggerConfig
 local Logger = {}
 Logger.__index = Logger
 
 ---Formats a log message with prefix and context
----@param level LogLevel The log level
+---@param level spm.LogLevel The log level
 ---@param message string The message to log
 ---@param context string? Optional context information
 ---@return string formatted_message The formatted message
@@ -62,7 +62,7 @@ local function format_message(level, message, context)
 end
 
 ---Logs a message at the specified level
----@param level LogLevel The log level
+---@param level spm.LogLevel The log level
 ---@param message string The message to log
 ---@param context string? Optional context information
 local function log(level, message, context)
@@ -127,14 +127,14 @@ function Logger.clear_history() log_history = {} end
 
 ---Creates a contextual logger that automatically includes context
 ---@param context string The context for all log messages
----@return table contextual_logger Logger with automatic context
+---@return spm.Logger contextual_logger Logger with automatic context
 function Logger.create_context(context)
-  return {
+  return setmetatable({
     debug = function(message) Logger.debug(message, context) end,
     info = function(message) Logger.info(message, context) end,
     warn = function(message) Logger.warn(message, context) end,
     error = function(message) Logger.error(message, context) end,
-  }
+  }, { __index = Logger })
 end
 
 ---Exposes log levels for external use

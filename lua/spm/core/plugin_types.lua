@@ -1,6 +1,6 @@
 local Result = require('spm.lib.error').Result
 
----@class PluginSpec
+---@class spm.PluginSpec
 ---@field name string? Optional human-readable name for the plugin
 ---@field src string Full URL to the plugin repository (required)
 ---@field version string? Version or branch to install (defaults to master if not specified)
@@ -9,7 +9,7 @@ local PluginSpec = {}
 PluginSpec.__index = PluginSpec
 
 ---Validates a single plugin specification
----@return Result<PluginSpec>
+---@return spm.Result<spm.PluginSpec>
 function PluginSpec:validate()
   if type(self) ~= 'table' then
     return Result.err('Plugin must be a table')
@@ -22,20 +22,20 @@ function PluginSpec:validate()
   return Result.ok(self)
 end
 
----@class LanguageServerSpec
+---@class spm.LanguageServerSpec
 ---@field servers string[] List of language servers to enable
 
 ---@class PluginConfig
----@field plugins PluginSpec[] Array of plugin configurations
----@field language_servers LanguageServerSpec? Configuration for language servers
+---@field plugins spm.PluginSpec[] Array of plugin configurations
+---@field language_servers spm.LanguageServerSpec? Configuration for language servers
 ---@field filetypes table? Configuration for filetype mappings
 local PluginConfig = {}
 PluginConfig.__index = PluginConfig
 
----@alias PluginList PluginSpec[]
+---@alias PluginList spm.PluginSpec[]
 
 ---Validates a complete plugin configuration
----@return Result<PluginConfig>
+---@return spm.Result<PluginConfig>
 function PluginConfig:validate()
   if type(self) ~= 'table' then
     return Result.err('Config must be a table')
@@ -65,7 +65,7 @@ local function extract_repo_name(url)
 end
 
 ---Creates a flat list of all plugins including dependencies
----@return PluginSpec[] flattened_plugins All plugins including dependencies as individual entries
+---@return spm.PluginSpec[] flattened_plugins All plugins including dependencies as individual entries
 function PluginConfig:flatten_plugins()
   local flattened = {}
   local seen_urls = {}

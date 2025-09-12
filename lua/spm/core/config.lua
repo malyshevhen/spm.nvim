@@ -1,17 +1,17 @@
 local Result = require('spm.lib.error').Result
 
----@class SimplePMConfig
+---@class spm.Config
 ---@field plugins_toml_path string? Path to plugins.toml file (nil will default to config_root/plugins.toml)
 ---@field lock_file_path string? Path to the lock file
 ---@field auto_source_configs boolean? Whether to automatically source config files
 ---@field auto_setup_keymaps boolean? Whether to automatically setup keymap system
 ---@field show_startup_messages boolean? Whether to show startup messages
 ---@field debug_mode boolean? Enable debug logging
-local SimplePMConfig = {}
-SimplePMConfig.__index = SimplePMConfig
+local Config = {}
+Config.__index = Config
 
 --- Default configuration values
----@type SimplePMConfig
+---@type spm.Config
 local DEFAULT_CONFIG = {
   plugins_toml_path = vim.fn.stdpath('config') .. '/plugins.toml',
   lock_file_path = vim.fn.stdpath('data') .. '/spm.lock',
@@ -22,8 +22,8 @@ local DEFAULT_CONFIG = {
 }
 
 --- Validates the configuration
----@return Result<SimplePMConfig>
-function SimplePMConfig:validate()
+---@return spm.Result<spm.Config>
+function Config:validate()
   if type(self) ~= 'table' then
     return Result.err('Configuration must be a table')
   end
@@ -58,26 +58,26 @@ end
 
 --- Creates a new configuration by merging user config with defaults
 ---@param user_config table? User-provided configuration
----@return Result<SimplePMConfig>
-function SimplePMConfig.create(user_config)
+---@return spm.Result<spm.Config>
+function Config.create(user_config)
   if user_config and type(user_config) ~= 'table' then
     return Result.err('Configuration must be a table')
   end
 
   local config = vim.tbl_deep_extend('force', vim.deepcopy(DEFAULT_CONFIG), user_config or {})
 
-  ---@type SimplePMConfig
-  config = setmetatable(config, SimplePMConfig)
+  ---@type spm.Config
+  config = setmetatable(config, Config)
 
   -- Final validation of resolved config
   return config:validate():map(function() return config end)
 end
 
-function SimplePMConfig.default() return vim.deepcopy(DEFAULT_CONFIG) end
+function Config.default() return vim.deepcopy(DEFAULT_CONFIG) end
 
 ---Validates that required files exist for the configuration
----@return Result<nil>
-function SimplePMConfig:validate_files_exists()
+---@return spm.Result<nil>
+function Config:validate_files_exists()
   -- Check if plugins.toml exists
   if vim.fn.filereadable(self.plugins_toml_path) == 0 then
     return Result.err(string.format('plugins.toml not found at: %s', self.plugins_toml_path))
@@ -86,4 +86,4 @@ function SimplePMConfig:validate_files_exists()
   return Result.ok(nil)
 end
 
-return SimplePMConfig
+return Config

@@ -9,14 +9,14 @@ local spm = {
 }
 
 ---Sets up logging based on configuration
----@param config SimplePMConfig
----@return SimplePMConfig
+---@param config spm.Config
+---@return spm.Config
 local function setup_logging(config) return config end
 
 ---Main initialization function
----@param user_config SimplePMConfig? Configuration options
+---@param user_config spm.Config? Configuration options
 function spm.setup(user_config)
-  ---@type SimplePMConfig
+  ---@type spm.Config
   local cfg = user_config or {}
 
   logger.configure({
@@ -41,7 +41,7 @@ function spm.setup(user_config)
 end
 
 ---Get the keymap compatibility system for direct use
----@param keymaps KeymapSpec[]? Keymaps to map
+---@param keymaps spm.KeymapSpec[]? Keymaps to map
 function spm.keymaps(keymaps) spm.keymap.map(keymaps or {}) end
 
 return setmetatable(spm, {

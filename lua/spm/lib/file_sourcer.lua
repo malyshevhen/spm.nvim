@@ -1,17 +1,17 @@
 local logger = require('spm.lib.logger')
 local Result = require('spm.lib.error').Result
 
----@class FileSourcerOptions
+---@class spm.FileSourcerOptions
 ---@field recursive boolean Whether to source directories recursively (not recommended)
 
----@class SourceResult
+---@class spm.SourceResult
 ---@field success boolean Whether the operation was successful
 ---@field files_sourced number Number of files successfully sourced
 ---@field errors table[] List of errors encountered
 
 ---Safely sources a single Lua file
 ---@param filepath string Path to the Lua file to source
----@return Result<nil>
+---@return spm.Result<nil>
 local function source_lua_file(filepath)
   if vim.fn.filereadable(filepath) == 0 then
     return Result.err(string.format('File not readable: %s', filepath))
@@ -42,8 +42,8 @@ end
 
 ---Sources all Lua files in a directory
 ---@param dirpath string Path to the directory
----@param options FileSourcerOptions Sourcing options
----@return Result<SourceResult>
+---@param options spm.FileSourcerOptions Sourcing options
+---@return spm.Result<spm.SourceResult>
 local function source_directory(dirpath, options)
   local result = {
     success = true,
