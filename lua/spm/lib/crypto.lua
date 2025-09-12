@@ -4,10 +4,14 @@ local Result = require('spm.lib.error').Result
 ---@param content string The content to hash
 ---@return Result<string>
 local function generate_hash(content)
-  if type(content) ~= 'string' then return Result.err('Content must be a string') end
+  if type(content) ~= 'string' then
+    return Result.err('Content must be a string')
+  end
 
   local success, hash = pcall(vim.fn.sha256, content)
-  if not success then return Result.err('Failed to generate hash') end
+  if not success then
+    return Result.err('Failed to generate hash')
+  end
 
   return Result.ok(hash)
 end

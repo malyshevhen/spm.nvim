@@ -1,9 +1,8 @@
--- Test the plugin manager functionality through integration with its dependencies
 local Result = require('spm.lib.error').Result
-local toml_parser = require('spm.lib.toml_parser')
-local lock_manager = require('spm.core.lock_manager')
 local crypto = require('spm.lib.crypto')
+local lock_manager = require('spm.core.lock_manager')
 local plugin_types = require('spm.core.plugin_types')
+local toml_parser = require('spm.lib.toml_parser')
 local PluginConfig = plugin_types.PluginConfig
 
 -- Helper function to convert plain table to PluginConfig
@@ -157,7 +156,10 @@ describe('plugin_manager integration', function()
       -- 4. Generate hash of original content
       local content_result = Result.try(function()
         local file = io.open(test_plugins_toml_path, 'r')
-        if not file then error('Cannot open file') end
+        if not file then
+          error('Cannot open file')
+        end
+
         local content = file:read('*a')
         file:close()
         return content

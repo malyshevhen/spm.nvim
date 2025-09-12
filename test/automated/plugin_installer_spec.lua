@@ -1,4 +1,4 @@
-local pack_installer = require('spm.core.pack_installer')
+local pack_installer = require('spm.core.plugin_installer')
 
 describe('pack_installer', function()
   local old_vim_pack
@@ -25,14 +25,14 @@ describe('pack_installer', function()
       },
     }
 
-    local result = pack_installer(plugins)
+    local result = pack_installer.install(plugins)
     assert.is_true(result:is_ok())
     assert.is_true(called)
   end)
 
   it('should return an error if vim.pack is not available', function()
     vim.pack = {}
-    local result = pack_installer({ { src = 'https://github.com/test/test' } })
+    local result = pack_installer.install({ { src = 'https://github.com/test/test' } })
     assert.is_true(result:is_err())
     assert.are.same('vim.pack is not available - requires Neovim 0.12+', result.error.message)
   end)
@@ -43,7 +43,8 @@ describe('pack_installer', function()
       add = function() called = true end,
     }
 
-    local result = pack_installer(nil)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    local result = pack_installer.install(nil)
     assert.is_true(result:is_ok())
     assert.is_false(called)
   end)

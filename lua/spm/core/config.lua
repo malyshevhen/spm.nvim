@@ -24,7 +24,9 @@ local DEFAULT_CONFIG = {
 --- Validates the configuration
 ---@return Result<SimplePMConfig>
 function SimplePMConfig:validate()
-  if type(self) ~= 'table' then return Result.err('Configuration must be a table') end
+  if type(self) ~= 'table' then
+    return Result.err('Configuration must be a table')
+  end
 
   -- Validate required fields and types
   if self.plugins_toml_path ~= nil and type(self.plugins_toml_path) ~= 'string' then
@@ -47,7 +49,9 @@ function SimplePMConfig:validate()
     return Result.err('show_startup_messages must be a boolean')
   end
 
-  if type(self.debug_mode) ~= 'boolean' then return Result.err('debug_mode must be a boolean') end
+  if type(self.debug_mode) ~= 'boolean' then
+    return Result.err('debug_mode must be a boolean')
+  end
 
   return Result.ok(self)
 end

@@ -1,9 +1,9 @@
-local logger = require('spm.lib.logger')
-local lock_manager = require('spm.core.lock_manager')
-local toml_parser = require('spm.toml_parser')
-local pack_installer = require('spm.core.pack_installer')
-local file_sourcer = require('spm.lib.file_sourcer')
 local crypto = require('spm.lib.crypto')
+local file_sourcer = require('spm.lib.file_sourcer')
+local lock_manager = require('spm.core.lock_manager')
+local logger = require('spm.lib.logger')
+local plugin_installer = require('spm.core.plugin_installer')
+local toml_parser = require('spm.toml_parser')
 local Result = require('spm.lib.error').Result
 
 ---Reads file content
@@ -12,12 +12,16 @@ local Result = require('spm.lib.error').Result
 local function read_file(file_path)
   return Result.try(function()
     local file, read_err = io.open(file_path, 'r')
-    if not file then error('Cannot open file: ' .. (read_err or 'Unknown error')) end
+    if not file then
+      error('Cannot open file: ' .. (read_err or 'Unknown error'))
+    end
 
     ---@type string
     local content = file:read('*a')
     local ok, close_err = file:close()
-    if not ok then error('Cannot close file: ' .. (close_err or 'Unknown error')) end
+    if not ok then
+      error('Cannot close file: ' .. (close_err or 'Unknown error'))
+    end
 
     return content
   end)
@@ -86,7 +90,7 @@ local function install_plugins(plugins, force_reinstall, is_stale)
   end
 
   logger.info(log_message, 'PluginManager')
-  return pack_installer(plugins)
+  return plugin_installer.install(plugins)
 end
 
 ---@param config SimplePMConfig
@@ -190,35 +194,47 @@ local function setup(config, force_reinstall)
   logger.info('--- Starting PluginManager Setup ---', 'PluginManager')
 
   local config_result = get_plugin_config(config, force_reinstall)
-  if config_result:is_err() then return config_result end
+  if config_result:is_err() then
+    return config_result
+  end
   ---@type PluginConfig
   local parsed_config = config_result:unwrap()
 
   local flattened_plugins = parsed_config:flatten_plugins()
 
   local content_result = read_file(config.plugins_toml_path)
-  if content_result:is_err() then return content_result end
+  if content_result:is_err() then
+    return content_result
+  end
   ---@type string
   local plugins_toml_content = content_result:unwrap()
 
   local lock_data_result = lock_manager.read(config.lock_file_path)
-  if lock_data_result:is_err() then return lock_data_result end
+  if lock_data_result:is_err() then
+    return lock_data_result
+  end
   ---@type table
   local lock_data = lock_data_result:unwrap()
 
   local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
 
   local install_result = install_plugins(flattened_plugins, force_reinstall, is_stale)
-  if install_result:is_err() then return install_result end
+  if install_result:is_err() then
+    return install_result
+  end
 
   if force_reinstall or is_stale then
     local update_lock_file_result = update_lock_file(config, parsed_config, flattened_plugins)
-    if update_lock_file_result:is_err() then return update_lock_file_result end
+    if update_lock_file_result:is_err() then
+      return update_lock_file_result
+    end
   end
 
   logger.info('Sourcing user configuration files.', 'PluginManager')
   local source_configs_result = source_configs(vim.fn.stdpath('config'))
-  if source_configs_result:is_err() then return source_configs_result end
+  if source_configs_result:is_err() then
+    return source_configs_result
+  end
 
   logger.info('--- PluginManager Setup Finished ---', 'PluginManager')
   return Result.ok(nil)

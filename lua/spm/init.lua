@@ -24,7 +24,9 @@ function spm.setup(user_config)
     show_notifications = cfg.show_startup_messages or false,
   })
 
-  if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
+  if cfg.debug_mode then
+    logger.info('Debug mode enabled', 'SimplePM')
+  end
 
   logger.debug('Initialize config', 'SimplePM')
   cfg = spm.config_module.create(cfg):unwrap()

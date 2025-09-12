@@ -63,11 +63,6 @@ local function install(plugins, options)
   return Result.ok(nil)
 end
 
--- return {
---   install = install,
--- }
-
-return setmetatable(installer, {
-  __call = function(_, plugins, options) return install(plugins, options) end,
-  __index = installer,
-})
+return {
+  install = install,
+}
