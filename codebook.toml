@@ -4,6 +4,7 @@ words = [
     "keymaps",
     "metamethods",
     "metatable",
+    "mkdir",
     "neotest",
     "newindex",
     "nodoc",

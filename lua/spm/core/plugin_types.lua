@@ -1,3 +1,4 @@
+local logger = require('spm.lib.logger')
 local Result = require('spm.lib.error').Result
 
 ---@class spm.PluginSpec
@@ -8,9 +9,23 @@ local Result = require('spm.lib.error').Result
 local PluginSpec = {}
 PluginSpec.__index = PluginSpec
 
+---@param user_config table? User-provided configuration
+---@return spm.Result<spm.PluginSpec>
+function PluginSpec.create(user_config)
+  if user_config and type(user_config) ~= 'table' then
+    return Result.err('Configuration must be a table')
+  end
+
+  ---@type spm.PluginSpec
+  local plugin_spec = setmetatable(user_config or {}, PluginSpec)
+
+  -- Final validation of resolved config
+  return plugin_spec:valid()
+end
+
 ---Validates a single plugin specification
 ---@return spm.Result<spm.PluginSpec>
-function PluginSpec:validate()
+function PluginSpec:valid()
   if type(self) ~= 'table' then
     return Result.err('Plugin must be a table')
   end
@@ -22,21 +37,50 @@ function PluginSpec:validate()
   return Result.ok(self)
 end
 
+---@alias PluginList spm.PluginSpec[]
+
 ---@class spm.LanguageServerSpec
 ---@field servers string[] List of language servers to enable
 
----@class PluginConfig
+---@class spm.PluginConfig
 ---@field plugins spm.PluginSpec[] Array of plugin configurations
 ---@field language_servers spm.LanguageServerSpec? Configuration for language servers
 ---@field filetypes table? Configuration for filetype mappings
 local PluginConfig = {}
 PluginConfig.__index = PluginConfig
 
----@alias PluginList spm.PluginSpec[]
+---@param user_config table? User-provided configuration
+---@return spm.Result<spm.PluginConfig>
+function PluginConfig.create(user_config)
+  if user_config and type(user_config) ~= 'table' then
+    return Result.err('Configuration must be a table')
+  end
+
+  local config = user_config or {}
+
+  if config.plugins then
+    config.plugins = vim.tbl_map(function(plugin)
+      if type(plugin) == 'table' then
+        local plugin_spec_result = PluginSpec.create(plugin)
+        if plugin_spec_result:is_ok() then
+          return plugin_spec_result:unwrap()
+        end
+
+        logger.error(plugin_spec_result.error.message, 'PluginTypes')
+      end
+    end, config.plugins)
+  end
+
+  ---@type spm.PluginConfig
+  local plugin_config = setmetatable(config, PluginConfig)
+
+  -- Final validation of resolved config
+  return plugin_config:valid()
+end
 
 ---Validates a complete plugin configuration
----@return spm.Result<PluginConfig>
-function PluginConfig:validate()
+---@return spm.Result<spm.PluginConfig>
+function PluginConfig:valid()
   if type(self) ~= 'table' then
     return Result.err('Config must be a table')
   end
@@ -47,7 +91,7 @@ function PluginConfig:validate()
 
   for i, plugin in ipairs(self.plugins) do
     setmetatable(plugin, PluginSpec)
-    local validation_result = plugin:validate()
+    local validation_result = plugin:valid()
     if validation_result:is_err() then
       return Result.err(string.format('Plugin at index %d: %s', i, validation_result.error.message))
     end

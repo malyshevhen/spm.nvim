@@ -15,11 +15,11 @@ describe('plugin_types', function()
     it('should return an error if the plugin is not a table', function()
       local invalid_plugin = 'not a table'
       setmetatable(
-        { validate = PluginSpec.validate },
+        { validate = PluginSpec.valid },
         { __index = function() return invalid_plugin end }
       )
       ---@diagnostic disable-next-line: param-type-mismatch
-      local result = PluginSpec.validate(invalid_plugin)
+      local result = PluginSpec.valid(invalid_plugin)
       assert.is_true(result:is_err())
       assert.are.same('Plugin must be a table', result.error.message)
     end)
@@ -52,11 +52,11 @@ describe('plugin_types', function()
     it('should return an error if the config is not a table', function()
       local invalid_config = 'not a table'
       setmetatable(
-        { validate = PluginConfig.validate },
+        { validate = PluginConfig.valid },
         { __index = function() return invalid_config end }
       )
       ---@diagnostic disable-next-line: param-type-mismatch
-      local result = PluginConfig.validate(invalid_config)
+      local result = PluginConfig.valid(invalid_config)
       assert.is_true(result:is_err())
       assert.are.same('Config must be a table', result.error.message)
     end)

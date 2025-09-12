@@ -23,7 +23,7 @@ local DEFAULT_CONFIG = {
 
 --- Validates the configuration
 ---@return spm.Result<spm.Config>
-function Config:validate()
+function Config:valid()
   if type(self) ~= 'table' then
     return Result.err('Configuration must be a table')
   end
@@ -70,7 +70,7 @@ function Config.create(user_config)
   config = setmetatable(config, Config)
 
   -- Final validation of resolved config
-  return config:validate():map(function() return config end)
+  return config:valid()
 end
 
 function Config.default() return vim.deepcopy(DEFAULT_CONFIG) end

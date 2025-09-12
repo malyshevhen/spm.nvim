@@ -36,7 +36,11 @@ describe('plugin_manager integration', function()
 
   describe('configuration parsing workflow', function()
     it('should parse valid TOML configuration', function()
-      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local content = [=[
+[[plugins]]
+name = "test-plugin"
+src = "https://github.com/test/plugin"
+]=]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
@@ -51,7 +55,11 @@ describe('plugin_manager integration', function()
     end)
 
     it('should validate parsed configuration', function()
-      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local content = [=[
+[[plugins]]
+name = "test-plugin"
+src = "https://github.com/test/plugin"
+]=]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
@@ -65,7 +73,12 @@ describe('plugin_manager integration', function()
     end)
 
     it('should flatten plugins including dependencies', function()
-      local content = '[[plugins]]\nname = "main-plugin"\nsrc = "https://github.com/test/main"\ndependencies = ["https://github.com/test/dep"]\n'
+      local content = [=[
+[[plugins]]
+name = "main-plugin"
+src = "https://github.com/test/main"
+dependencies = ["https://github.com/test/dep"]
+]=]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
@@ -135,7 +148,11 @@ describe('plugin_manager integration', function()
 
   describe('complete workflow integration', function()
     it('should handle a complete parse -> validate -> flatten -> lock workflow', function()
-      local content = '[[plugins]]\nname = "test-plugin"\nsrc = "https://github.com/test/plugin"\n'
+      local content = [=[
+[[plugins]]
+name = "test-plugin"
+src = "https://github.com/test/plugin"
+]=]
       local test_plugins_toml_path = create_temp_file(content)
       local test_lock_file_path = create_temp_file(nil)
 
@@ -192,18 +209,24 @@ describe('plugin_manager integration', function()
     end)
 
     it('should handle complex configurations with language servers and filetypes', function()
-      local content = '[[plugins]]\n'
-        .. 'name = "plugin1"\n'
-        .. 'src = "https://github.com/test/plugin1"\n\n'
-        .. '[[plugins]]\n'
-        .. 'name = "plugin2"\n'
-        .. 'src = "https://github.com/test/plugin2"\n'
-        .. 'version = "stable"\n\n'
-        .. '[language_servers]\n'
-        .. 'servers = ["lua_ls", "gopls"]\n\n'
-        .. '[filetypes]\n'
-        .. '[filetypes.pattern]\n'
-        .. "'*.test' = 'testfiletype'\n"
+      local content = [=[
+[[plugins]]
+name = "plugin1"
+src = "https://github.com/test/plugin1"
+
+[[plugins]]
+name = "plugin2"
+src = "https://github.com/test/plugin2"
+version = "stable"
+
+[language_servers]
+servers = ["lua_ls", "gopls"]
+
+[filetypes]
+
+[filetypes.pattern]
+"*.test" = "testfiletype"
+]=]
       local test_plugins_toml_path = create_temp_file(content)
 
       local parse_result = toml_parser.parse_plugins_toml(test_plugins_toml_path)
@@ -240,7 +263,11 @@ describe('plugin_manager integration', function()
     end)
 
     it('should validate plugin specifications', function()
-      local content = '[[plugins]]\nname = "invalid-plugin"\nsrc = "not-a-valid-url"\n'
+      local content = [=[
+[[plugins]]
+name = "invalid-plugin"
+src = "not-a-valid-url"
+]=]
       local test_plugins_toml_path = create_temp_file(content)
 
       local success, parse_result = pcall(

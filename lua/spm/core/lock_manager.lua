@@ -1,4 +1,5 @@
 local crypto = require('spm.lib.crypto')
+local fs = require('spm.lib.fs')
 local logger = require('spm.lib.logger')
 local toml_parser = require('spm.lib.toml_parser')
 local Result = require('spm.lib.error').Result
@@ -11,8 +12,7 @@ local function read(lock_file_path)
     logger.info('Lock file not found at: ' .. lock_file_path, 'LockManager')
     return Result.ok(nil)
   end
-
-  return toml_parser.parse_file(lock_file_path)
+  return fs.read_file(lock_file_path):flat_map(toml_parser.parse)
 end
 
 ---Writes data to the lock file
@@ -20,28 +20,18 @@ end
 ---@param lock_data table
 ---@return spm.Result<boolean>
 local function write(lock_file_path, lock_data)
-  local encode_result = toml_parser.encode(lock_data)
-  if encode_result:is_err() then
-    return encode_result
-  end
+  return toml_parser.encode(lock_data):flat_map(function(encoded_data)
+    -- Ensure directory exists
+    local dir = vim.fn.fnamemodify(lock_file_path, ':h')
+    if vim.fn.isdirectory(dir) == 0 then
+      vim.fn.mkdir(dir, 'p')
+    end
 
-  -- Ensure directory exists
-  local dir = vim.fn.fnamemodify(lock_file_path, ':h')
-  if vim.fn.isdirectory(dir) == 0 then
-    vim.fn.mkdir(dir, 'p')
-  end
-
-  local file, open_err = io.open(lock_file_path, 'w')
-  if not file then
-    local error_msg = 'Failed to open lock file for writing: ' .. tostring(open_err)
-    logger.error(error_msg, 'LockManager')
-    return Result.err(error_msg)
-  end
-
-  file:write(encode_result:unwrap())
-  file:close()
-  logger.info('Lock file updated at: ' .. lock_file_path, 'LockManager')
-  return Result.ok(true)
+    return fs.write_file(lock_file_path, encoded_data):map(function()
+      logger.info('Lock file updated at: ' .. lock_file_path, 'LockManager')
+      return true
+    end)
+  end)
 end
 
 ---Checks if the lock file is stale by comparing hashes
