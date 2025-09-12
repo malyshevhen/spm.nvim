@@ -1,9 +1,9 @@
 -- Test the plugin manager functionality through integration with its dependencies
-local Result = require('spm.error').Result
-local toml_parser = require('spm.toml_parser')
-local lock_manager = require('spm.lock_manager')
-local crypto = require('spm.crypto')
-local plugin_types = require('spm.plugin_types')
+local Result = require('spm.lib.error').Result
+local toml_parser = require('spm.lib.toml_parser')
+local lock_manager = require('spm.core.lock_manager')
+local crypto = require('spm.lib.crypto')
+local plugin_types = require('spm.core.plugin_types')
 local PluginConfig = plugin_types.PluginConfig
 
 -- Helper function to convert plain table to PluginConfig

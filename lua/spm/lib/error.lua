@@ -1,3 +1,47 @@
+--- Usage examples:
+--
+-- -- Basic usage
+-- ```lua
+-- local result1 = Result.ok('Hello World')
+-- local result2 = Result.err('Something went wrong')
+--
+-- print(result1:is_ok())  -- true
+-- print(result2:is_err()) -- true
+--
+-- -- Chaining operations
+-- local final_result = Result.ok(5)
+--     :map(function(x) return x * 2 end)
+--     :map(tostring)
+--     :unwrap() -- "10"
+--
+-- print("Expected: 10, got: " .. final_result)
+-- print("Type of final_result: " .. type(final_result))
+--
+-- -- Error handling
+-- local safe_divide = function(a, b)
+--   if b == 0 then
+--     return Result.err('Division by zero')
+--   end
+--   return Result.ok(a / b)
+-- end
+--
+-- local result = safe_divide(10, 2)
+--     :map(function(x) return x * 3 end)
+--     :unwrap_or(0) -- 15
+--
+-- print("Expected: 15, got: " .. result)
+--
+-- -- Using with existing functions
+-- local file_result = Result.try(function()
+--   return vim.fn.readfile('some_file.txt')
+-- end)
+--
+-- if file_result:is_ok() then
+--   local lines = file_result:unwrap()
+--   -- process lines
+-- end
+-- ```
+
 ---@class Error
 ---@field message string
 ---@field code string?
@@ -95,6 +139,7 @@ function Result:map_err(fn)
   if not ok then
     return Result.err({ message = 'Map_err function failed: ' .. tostring(mapped_error) })
   end
+
   return Result.err(mapped_error)
 end
 
@@ -133,32 +178,15 @@ function Result:or_else(fn)
   return Result.ok(recovery_result)
 end
 
----Convert to string representation
----@return string
-function Result:__tostring()
-  if self.success then
-    return string.format('Ok(%s)', vim.inspect(self.result))
-  else
-    return string.format(
-      'Err(%s)',
-      vim.inspect(self.error and self.error.message or 'Unknown error')
-    )
-  end
-end
-
--- Example usage and factory functions
-
 ---Create Result from a function that might throw
 ---@generic T
 ---@param fn fun(): T
 ---@return Result<T>
 function Result.try(fn)
   local ok, result = pcall(fn)
-  if ok then
-    return Result.ok(result)
-  else
-    return Result.err({ message = tostring(result) })
-  end
+  if not ok then return Result.err({ message = tostring(result) }) end
+
+  return Result.ok(result)
 end
 
 ---Create Result from success/error tuple (common Lua pattern)
@@ -167,59 +195,24 @@ end
 ---@param value_or_error T|string
 ---@return Result<T>
 function Result.from_tuple(success, value_or_error)
-  if success then
-    return Result.ok(value_or_error)
-  else
+  if not success then
     return Result.err(
       type(value_or_error) == 'string' and { message = value_or_error } or value_or_error
     )
   end
+
+  return Result.ok(value_or_error)
 end
 
---[[
--- Usage examples:
-
--- Basic usage
-local result1 = Result.ok('Hello World')
-local result2 = Result.err('Something went wrong')
-
-print(result1:is_ok())  -- true
-print(result2:is_err()) -- true
-
--- Chaining operations
-local final_result = Result.ok(5)
-    :map(function(x) return x * 2 end)
-    :map(tostring)
-    :unwrap() -- "10"
-
-print("Expected: 10, got: " .. final_result)
-print("Type of final_result: " .. type(final_result))
-
--- Error handling
-local safe_divide = function(a, b)
-  if b == 0 then
-    return Result.err('Division by zero')
+---Convert to string representation
+---@return string
+function Result:__tostring()
+  if not self.success then
+    return ('Err(%s)'):format(vim.inspect(self.error and self.error.message or 'Unknown error'))
   end
-  return Result.ok(a / b)
+
+  return string.format('Ok(%s)', vim.inspect(self.result))
 end
-
-local result = safe_divide(10, 2)
-    :map(function(x) return x * 3 end)
-    :unwrap_or(0) -- 15
-
-print("Expected: 15, got: " .. result)
-
--- Using with existing functions
-local file_result = Result.try(function()
-  return vim.fn.readfile('some_file.txt')
-end)
-
-if file_result:is_ok() then
-  local lines = file_result:unwrap()
-  -- process lines
-end
-
---]]
 
 return {
   Result = Result,

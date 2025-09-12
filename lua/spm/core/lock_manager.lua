@@ -1,7 +1,7 @@
-local logger = require('spm.logger')
-local crypto = require('spm.crypto')
-local toml_parser = require('spm.toml_parser')
-local Result = require('spm.error').Result
+local logger = require('spm.lib.logger')
+local crypto = require('spm.lib.crypto')
+local toml_parser = require('spm.lib.toml_parser')
+local Result = require('spm.lib.error').Result
 
 ---Reads and parses the lock file
 ---@param lock_file_path string

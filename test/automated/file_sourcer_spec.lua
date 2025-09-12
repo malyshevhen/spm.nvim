@@ -1,5 +1,5 @@
 ---@diagnostic disable: need-check-nil
-local file_sourcer = require('spm.file_sourcer')
+local file_sourcer = require('spm.lib.file_sourcer')
 
 describe('file_sourcer', function()
   before_each(function()

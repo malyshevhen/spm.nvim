@@ -1,6 +1,7 @@
 words = [
     "keymap",
     "keymaps",
+    "metamethods",
     "metatable",
     "neotest",
     "newindex",

@@ -1,5 +1,5 @@
-local logger = require('spm.logger')
-local Result = require('spm.error').Result
+local logger = require('spm.lib.logger')
+local Result = require('spm.lib.error').Result
 
 ---@class FileSourcerOptions
 ---@field recursive boolean Whether to source directories recursively (not recommended)

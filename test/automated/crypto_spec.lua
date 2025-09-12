@@ -1,4 +1,4 @@
-local crypto = require('spm.crypto')
+local crypto = require('spm.lib.crypto')
 
 describe('crypto', function()
   it('should generate a sha256 hash for a string', function()

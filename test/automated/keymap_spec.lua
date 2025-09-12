@@ -1,4 +1,4 @@
-local keymap = require('spm.keymap')
+local keymap = require('spm.core.keymap')
 
 describe('keymap', function()
   describe('KeymapSpec:validate', function()

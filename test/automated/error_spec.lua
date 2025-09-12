@@ -1,4 +1,4 @@
-local err = require('spm.error')
+local err = require('spm.lib.error')
 local Result = err.Result
 
 describe('error', function()

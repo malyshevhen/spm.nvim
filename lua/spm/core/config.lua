@@ -1,4 +1,4 @@
-local Result = require('spm.error').Result
+local Result = require('spm.lib.error').Result
 
 ---@class SimplePMConfig
 ---@field plugins_toml_path string? Path to plugins.toml file (nil will default to config_root/plugins.toml)

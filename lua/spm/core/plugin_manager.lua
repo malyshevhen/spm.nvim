@@ -1,10 +1,10 @@
-local logger = require('spm.logger')
-local lock_manager = require('spm.lock_manager')
+local logger = require('spm.lib.logger')
+local lock_manager = require('spm.core.lock_manager')
 local toml_parser = require('spm.toml_parser')
-local pack_installer = require('spm.pack_installer')
-local file_sourcer = require('spm.file_sourcer')
-local crypto = require('spm.crypto')
-local Result = require('spm.error').Result
+local pack_installer = require('spm.core.pack_installer')
+local file_sourcer = require('spm.lib.file_sourcer')
+local crypto = require('spm.lib.crypto')
+local Result = require('spm.lib.error').Result
 
 ---Reads file content
 ---@param file_path string

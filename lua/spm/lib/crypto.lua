@@ -1,4 +1,4 @@
-local Result = require('spm.error').Result
+local Result = require('spm.lib.error').Result
 
 ---Generates a SHA256 hash for the given content
 ---@param content string The content to hash

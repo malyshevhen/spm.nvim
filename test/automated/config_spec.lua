@@ -1,4 +1,4 @@
-local Config = require('spm.config')
+local Config = require('spm.core.config')
 
 describe('Config', function()
   it('should create a default configuration if no user config is provided', function()
@@ -6,7 +6,6 @@ describe('Config', function()
     assert.is_true(result:is_ok())
     local config = result:unwrap()
     local default_config = Config.default()
-    default_config.plugins_toml_path = default_config.config_root .. '/plugins.toml'
     assert.are.same(default_config, config)
   end)
 
@@ -24,7 +23,7 @@ describe('Config', function()
     local result = Config.create()
     assert.is_true(result:is_ok())
     local config = result:unwrap()
-    assert.are.same(config.config_root .. '/plugins.toml', config.plugins_toml_path)
+    assert.are.same(vim.fn.stdpath('config') .. '/plugins.toml', config.plugins_toml_path)
   end)
 
   it('should set the default lock_file_path if not provided', function()
@@ -76,18 +75,6 @@ describe('Config', function()
     assert.are.same('debug_mode must be a boolean', result.error.message)
   end)
 
-  it('should return an error if config_root is not a string', function()
-    local result = Config.create({ config_root = 123 })
-    assert.is_true(result:is_err())
-    assert.are.same('config_root must be a string', result.error.message)
-  end)
-
-  it('should return an error if config_root is not a valid directory', function()
-    local result = Config.create({ config_root = '/not/a/real/dir' })
-    assert.is_true(result:is_err())
-    assert.are.same('config_root must be a valid directory', result.error.message)
-  end)
-
   it('should return an error if plugins.toml does not exist', function()
     local result = Config.create({ plugins_toml_path = '/tmp/non_existent_plugins.toml' })
     assert.is_true(result:is_ok())
@@ -98,11 +85,5 @@ describe('Config', function()
       'plugins.toml not found at: /tmp/non_existent_plugins.toml',
       file_result.error.message
     )
-  end)
-
-  it('should return an error if config_root does not exist', function()
-    local result = Config.create({ config_root = '/tmp/non_existent_dir' })
-    assert.is_true(result:is_err())
-    assert.are.same('config_root must be a valid directory', result.error.message)
   end)
 end)

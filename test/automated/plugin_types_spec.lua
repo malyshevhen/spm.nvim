@@ -1,5 +1,5 @@
-local PluginConfig = require('spm.plugin_types').PluginConfig
-local PluginSpec = require('spm.plugin_types').PluginSpec
+local PluginConfig = require('spm.core.plugin_types').PluginConfig
+local PluginSpec = require('spm.core.plugin_types').PluginSpec
 
 describe('plugin_types', function()
   describe('PluginSpec:validate', function()

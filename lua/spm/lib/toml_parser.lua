@@ -1,6 +1,6 @@
 local toml = require('spm.vendor.toml')
-local logger = require('spm.logger')
-local Result = require('spm.error').Result
+local logger = require('spm.lib.logger')
+local Result = require('spm.lib.error').Result
 
 ---Safely parses TOML content using the vendor toml.lua library
 ---@param content string The TOML content to parse

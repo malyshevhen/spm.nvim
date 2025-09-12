@@ -1,6 +1,6 @@
 ---@diagnostic disable: need-check-nil
-local lock_manager = require('spm.lock_manager')
-local crypto = require('spm.crypto')
+local lock_manager = require('spm.core.lock_manager')
+local crypto = require('spm.lib.crypto')
 
 describe('lock_manager', function()
   local lock_file_path = 'test/fixtures/spm.lock'

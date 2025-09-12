@@ -1,4 +1,4 @@
-local pack_installer = require('spm.pack_installer')
+local pack_installer = require('spm.core.pack_installer')
 
 describe('pack_installer', function()
   local old_vim_pack

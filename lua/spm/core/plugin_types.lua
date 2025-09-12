@@ -1,4 +1,4 @@
-local Result = require('spm.error').Result
+local Result = require('spm.lib.error').Result
 
 ---@class PluginSpec
 ---@field name string? Optional human-readable name for the plugin

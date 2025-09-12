@@ -1,4 +1,4 @@
-local toml_parser = require('spm.toml_parser')
+local toml_parser = require('spm.lib.toml_parser')
 
 describe('toml_parser', function()
   it('should parse a valid toml file', function()
