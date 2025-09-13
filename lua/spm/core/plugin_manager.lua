@@ -14,7 +14,25 @@ local Result = require('spm.lib.error').Result
 ---@return spm.Result<spm.PluginConfig>
 local function parse_config(plugins_toml_path)
   logger.info(string.format('Parsing configuration: %s', plugins_toml_path), 'PluginManager')
-  return fs.read_file(plugins_toml_path):flat_map(toml_parser.parse):flat_map(PluginConfig.create)
+  local plugins_toml_result = fs.read_file(plugins_toml_path)
+  if plugins_toml_result:is_err() then
+    logger.error('Failed to read plugins.toml', 'PluginManager')
+    return plugins_toml_result
+  end
+
+  local plugins_toml_content = plugins_toml_result:unwrap()
+  logger.debug('Successfully read plugins.toml', 'PluginManager')
+
+  local parsed_result = toml_parser.parse(plugins_toml_content)
+  if parsed_result:is_err() then
+    logger.error('Failed to parse plugins.toml', 'PluginManager')
+    return parsed_result
+  end
+
+  local parsed_content = parsed_result:unwrap()
+  logger.debug('Successfully parsed plugins.toml', 'PluginManager')
+
+  return PluginConfig.create(parsed_content)
 end
 
 ---@param config spm.Config
@@ -94,10 +112,27 @@ local function update_lock_file(config, parsed_config, flattened_plugins)
     return lock_manager.write(config.lock_file_path, new_lock_data)
   end
 
-  return fs.read_file(config.plugins_toml_path)
-    :flat_map(crypto.generate_hash)
-    :flat_map(build_lock_data)
-    :flat_map(write_lock_file)
+  local plugins_toml_file_result = fs.read_file(config.plugins_toml_path)
+  if plugins_toml_file_result:is_err() then
+    logger.error('Failed to read plugins.toml', 'PluginManager')
+    return plugins_toml_file_result
+  end
+
+  local plugins_toml_content = plugins_toml_file_result:unwrap()
+  logger.debug('Successfully read plugins.toml', 'PluginManager')
+
+  local hash_result = crypto.generate_hash(plugins_toml_content)
+  if hash_result:is_err() then
+    logger.error('Failed to generate hash', 'PluginManager')
+    return hash_result
+  end
+  local hash = hash_result:unwrap()
+  logger.debug('Successfully generated hash', 'PluginManager')
+
+  local lock_data = build_lock_data(hash)
+  logger.debug('Successfully built lock data', 'PluginManager')
+
+  return write_lock_file(lock_data)
 end
 
 ---Sources configuration files in the specified order
