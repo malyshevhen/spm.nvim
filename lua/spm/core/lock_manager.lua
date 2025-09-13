@@ -33,29 +33,39 @@ end
 ---@param lock_data table
 ---@return spm.Result<boolean>
 local function write(lock_file_path, lock_data)
-  logger.debug(string.format('Writing to lock file: %s', lock_file_path), 'LockManager')
-  return toml_parser.encode(lock_data):flat_map(function(encoded_data)
-    -- Ensure directory exists
-    local dir = vim.fn.fnamemodify(lock_file_path, ':h')
-    if vim.fn.isdirectory(dir) == 0 then
-      logger.debug(string.format('Creating directory: %s', dir), 'LockManager')
-      local success = vim.fn.mkdir(dir, 'p')
-      if success == 0 then
-        logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
-        return Result.err(string.format('Failed to create directory: %s', dir))
-      end
-    end
-
-    -- Check again after creating the directory
-    if vim.fn.isdirectory(dir) == 0 then
+  -- Create the directory if it doesn't exist
+  local dir = vim.fn.fnamemodify(lock_file_path, ':h')
+  if vim.fn.isdirectory(dir) == 0 then
+    logger.debug(string.format('Creating directory: %s', dir), 'LockManager')
+    local success = vim.fn.mkdir(dir, 'p')
+    if success == 0 then
       logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
       return Result.err(string.format('Failed to create directory: %s', dir))
     end
+  end
 
-    return fs.write_file(lock_file_path, encoded_data):map(function()
-      logger.info(string.format('Lock file updated at: %s', lock_file_path), 'LockManager')
-      return true
-    end)
+  -- Check again after creating the directory
+  if vim.fn.isdirectory(dir) == 0 then
+    logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
+    return Result.err(string.format('Failed to create directory: %s', dir))
+  end
+
+  -- Read the lock data
+  logger.debug(string.format('Writing to lock file: %s', lock_file_path), 'LockManager')
+
+  local encoded_data_result = toml_parser.encode(lock_data)
+  if encoded_data_result:is_err() then
+    logger.error('Failed to encode lock data', 'LockManager')
+    return Result.err(encoded_data_result:unwrap_err())
+  end
+
+  -- Check again after encoding
+  local encoded_data = encoded_data_result:unwrap()
+
+  -- Write the lock file
+  return fs.write_file(lock_file_path, encoded_data):map(function()
+    logger.info(string.format('Lock file updated at: %s', lock_file_path), 'LockManager')
+    return true
   end)
 end
 
