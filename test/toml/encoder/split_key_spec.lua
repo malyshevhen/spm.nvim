@@ -1,0 +1,40 @@
+-- /home/evhen/projects/spm.nvim/test/toml/encoder/split_key_spec.lua
+local encoder = require('spm.lib.encoder')
+
+describe('encoder._split_key', function()
+  it('should split a key with a single dot', function()
+    local new_key, sub_key = encoder._split_key('a.b')
+    assert.are.equal('a', new_key)
+    assert.are.equal('b', sub_key)
+  end)
+
+  it('should split a key with multiple dots', function()
+    local new_key, sub_key = encoder._split_key('a.b.c')
+    assert.are.equal('a.b', new_key)
+    assert.are.equal('c', sub_key)
+  end)
+
+  it('should handle a key with no dots', function()
+    local new_key, sub_key = encoder._split_key('a')
+    assert.are.equal('', new_key)
+    assert.are.equal('a', sub_key)
+  end)
+
+  it('should handle an empty string', function()
+    local new_key, sub_key = encoder._split_key('')
+    assert.are.equal('', new_key)
+    assert.are.equal('', sub_key)
+  end)
+
+  it('should handle a key starting with a dot', function()
+    local new_key, sub_key = encoder._split_key('.a')
+    assert.are.equal('', new_key)
+    assert.are.equal('a', sub_key)
+  end)
+
+  it('should handle a key ending with a dot', function()
+    local new_key, sub_key = encoder._split_key('a.')
+    assert.are.equal('a', new_key)
+    assert.are.equal('', sub_key)
+  end)
+end)
