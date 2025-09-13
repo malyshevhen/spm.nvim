@@ -194,15 +194,15 @@ dependencies = ["https://github.com/test/dep"]
 
       local read_data = read_result:unwrap()
       assert.is_table(read_data)
-      print(vim.inspect(read_data))
 
       -- The data should contain the same structure
+      ---@diagnostic disable-next-line: empty-block
       if not read_data.hash then
-        print(vim.inspect(read_data))
+        -- TODO: Remove this once the lock file is fixed
       end
       assert.is_string(read_data.hash)
-      -- assert.is_table(read_data.plugins)
-      -- assert.are.equal(1, #read_data.plugins)
+      assert.is_table(read_data.plugins)
+      assert.are.equal(1, #read_data.plugins)
     end)
 
     it('should detect stale lock files', function()

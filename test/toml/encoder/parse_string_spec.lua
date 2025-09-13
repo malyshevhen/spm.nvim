@@ -9,7 +9,7 @@ describe('encoder._parse_string', function()
 
   it(
     'should escape backslashes',
-    function() assert.are.equal("'hello\\world'", encoder._parse_string('helloworld')) end
+    function() assert.are.equal("'hello\\world'", encoder._parse_string('hello\\world')) end
   )
 
   it(
