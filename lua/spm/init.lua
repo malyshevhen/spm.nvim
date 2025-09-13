@@ -1,5 +1,4 @@
-local logger = require('spm.logger')
-local Result = require('spm.error').Result
+local logger = require('spm.lib.logger')
 
 ---@class SimplePM
 local spm = {
