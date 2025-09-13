@@ -19,9 +19,7 @@ local function retry_operation(operation, max_retries)
   max_retries = max_retries or 3
   for i = 1, max_retries do
     local success, result = pcall(operation)
-    if success then
-      return result
-    end
+    if success then return result end
 
     if i < max_retries then
       -- Small delay between retries
@@ -59,9 +57,7 @@ describe('plugin_manager integration', function()
     -- Clean up files with proper error handling
     for _, path_obj in ipairs(test_env.files_to_clean) do
       local success, err = pcall(function()
-        if path_obj:exists() then
-          path_obj:rm()
-        end
+        if path_obj:exists() then path_obj:rm() end
       end)
       if not success then
         print('Failed to clean up file: ' .. tostring(err))
@@ -256,9 +252,7 @@ dependencies = ["https://github.com/test/dep"]
       local content_result = retry_operation(function()
         return Result.try(function()
           local file = io.open(test_plugins_toml_path, 'r')
-          if not file then
-            error('Cannot open file')
-          end
+          if not file then error('Cannot open file') end
 
           local content = file:read('*a')
           file:close()
@@ -342,6 +336,7 @@ servers = ["lua_ls", "gopls"]
       local test_plugins_toml_path = create_temp_file(content)
 
       local result = parse_plugins_toml(test_plugins_toml_path)
+      print(vim.inspect(result))
       assert.is_true(result:is_err())
 
       local error_msg = result:unwrap_err().message

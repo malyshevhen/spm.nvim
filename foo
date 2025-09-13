@@ -1,0 +1,35 @@
+local TomlEncoder = require('lua.spm.lib.toml.encoder')
+
+-- The same complex input table from the original prompt
+local input_table = {
+  ['foo'] = {
+    ['bar'] = {
+      ['baz'] = 1,
+      ['dict'] = { ['key1'] = 'value1', ['key2'] = 'value2' },
+      ['qux'] = {
+        ['zap'] = 42.0,
+        ['arr_of_dicts'] = {
+          { ['key1'] = 'value1', ['key2'] = 'value2' },
+          { ['key1'] = 'value3', ['key2'] = 'value4' },
+        },
+        ['arr_of_mixed'] = { true, false, 'string', 42, { ['key1'] = 'value1' } }, -- Note: Inline table not allowed in TOML array
+      },
+      ['bool'] = false,
+      ['array'] = { 1, 2, 3 },
+    },
+  },
+  ['first'] = true,
+}
+
+-- TOML does not support mixed-type arrays containing tables.
+-- Let's adjust the input to be TOML-compliant for a successful encoding.
+input_table.foo.bar.qux.arr_of_mixed = { true, false, 'string', 42 }
+
+local toml_string, err = TomlEncoder.encode(input_table)
+
+if err then
+  print('Encoding Error:', err)
+else
+  print('--- Generated TOML ---')
+  print(toml_string)
+end

@@ -8,6 +8,8 @@ local plugin_types = require('spm.core.plugin_types')
 local toml_parser = require('spm.lib.toml_parser')
 local PluginConfig = plugin_types.PluginConfig
 local Result = require('spm.lib.error').Result
+local pluginConfig = require('spm.core.plugin_types').PluginConfig
+-- local config = require('spm.core.config')
 
 ---Parses the plugins configuration file
 ---@param plugins_toml_path string Path to the plugins.toml file
@@ -287,9 +289,7 @@ local function debug_plugins(plugins_toml_path)
     return flattened_plugins
   end
 
-  return parse_config(plugins_toml_path)
-    :map(function(config) return config:flatten_plugins() end)
-    :map(log_flatten_plugins)
+  return parse_config(plugins_toml_path):map(pluginConfig.flatten_plugins):map(log_flatten_plugins)
 end
 
 return {

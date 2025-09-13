@@ -28,16 +28,17 @@ neglongpi = -3.141592653589793]=])
   end)
 
   it('exponent', function()
-    local obj = TOML.parse([=[
-exp1 = 5e+22
+    local input = [=[exp1 = 5e+22
 exp2 = 1e6
 exp3 = -2E-2
-exp4 = 6.626e-34]=])
+exp4 = 6.626e-34]=]
+    print('TOML input: \n', input)
+    local obj = TOML.parse(input)
     local sol = {
-      exp1 = math.floor(5 * 10 ^ 22),
-      exp2 = math.floor(1 * 10 ^ 6),
-      exp3 = math.floor(-2 * 10 ^ -2),
-      exp4 = 6.626 * 10 ^ -34,
+      exp1 = 5e+22,
+      exp2 = 1e6,
+      exp3 = -2e-2,
+      exp4 = 6.626e-34,
     }
     assert.same(sol, obj)
   end)

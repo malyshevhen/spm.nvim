@@ -1,5 +1,5 @@
 local logger = require('spm.lib.logger')
-local toml = require('spm.vendor.toml')
+local toml = require('spm.lib.toml')
 local Result = require('spm.lib.error').Result
 
 ---Reads and parses a TOML file
@@ -18,9 +18,7 @@ local function parse(content)
     return res:map_err(function(err) return 'Cannot parse TOML: ' .. err end)
   end
 
-  if type(res:unwrap()) ~= 'table' then
-    return Result.err('TOML content is not a table')
-  end
+  if type(res:unwrap()) ~= 'table' then return Result.err('TOML content is not a table') end
 
   logger.debug('Successfully parsed TOML content', 'TomlParser')
 
@@ -32,9 +30,7 @@ end
 ---@return spm.Result<string>
 local function encode(value)
   logger.debug('Encoding table to TOML', 'TomlParser')
-  if type(value) ~= 'table' then
-    return Result.err('Input must be a table')
-  end
+  if type(value) ~= 'table' then return Result.err('Input must be a table') end
 
   local success, result = pcall(toml.encode, value)
   if not success then
