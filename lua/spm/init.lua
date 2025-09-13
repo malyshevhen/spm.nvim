@@ -3,8 +3,8 @@ local logger = require('spm.lib.logger')
 ---@class SimplePM
 local spm = {
   config_module = require('spm.core.config'),
-  keymap = require('spm.keymap'),
-  plugin_manager = require('spm.plugin_manager'),
+  keymap = require('spm.core.keymap'),
+  plugin_manager = require('spm.core.plugin_manager'),
 }
 
 ---Main initialization function

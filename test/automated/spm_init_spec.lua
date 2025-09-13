@@ -120,7 +120,7 @@ src = "https://github.com/test/plugin"
     end)
   end)
 
-  describe('spm.keymaps', function()
+  describe('spm.core.keymaps', function()
     it('should call keymap.map with provided keymaps', function()
       local keymaps = {
         { mode = 'n', lhs = '<leader>p', rhs = ':echo "test"<CR>' },
