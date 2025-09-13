@@ -14,6 +14,7 @@
 
 local Result = require('spm.lib.error').Result
 local logger = require('spm.lib.logger')
+local Path = require('plenary.path')
 
 ---@class spm.fs
 local fs = {}
@@ -26,22 +27,17 @@ function fs.delete_file(path)
     return Result.err('Invalid path')
   end
 
-  ---Helper function for deleting a file
-  ---@return fun(): nil
-  local function delete_file_func()
-    return function()
-      local success, err = vim.uv.fs_unlink(path)
-      if not success then
-        error(err)
-      end
-
-      return nil
-    end
+  local p = Path:new(path)
+  if not p:exists() then
+    return Result.err('File does not exist')
   end
 
-  return Result.try(delete_file_func()):map_err(
-    function(err) return string.format('Failed to delete file: %s; %s', path, tostring(err)) end
-  )
+  local success, err = pcall(function() return p:rm() end)
+  if success then
+    return Result.ok(nil)
+  else
+    return Result.err(string.format('Failed to delete file: %s; %s', path, tostring(err)))
+  end
 end
 
 ---@param path string
@@ -52,22 +48,17 @@ function fs.mkdir(path)
     return Result.err('Invalid path')
   end
 
-  ---Helper function for creating a directory
-  ---@return fun(): nil
-  local function mkdir_func()
-    return function()
-      local success, err = vim.uv.fs_mkdir(path, 448)
-      if not success then
-        error(err)
-      end
-
-      return nil
+  local success, err = pcall(function()
+    local ok, uv_err = vim.uv.fs_mkdir(path, 448)
+    if not ok then
+      error(uv_err)
     end
+  end)
+  if success then
+    return Result.ok(nil)
+  else
+    return Result.err(string.format('Failed to create directory: %s; %s', path, tostring(err)))
   end
-
-  return Result.try(mkdir_func()):map_err(
-    function(err) return string.format('Failed to create directory: %s; %s', path, tostring(err)) end
-  )
 end
 
 ---@param path string
@@ -78,21 +69,17 @@ function fs.rmdir(path)
     return Result.err('Invalid path')
   end
 
-  ---Helper function for removing a directory
-  ---@return fun(): nil
-  local function rmdir_func()
-    return function()
-      local success, err = vim.uv.fs_rmdir(path)
-      if not success then
-        error(err)
-      end
-
-      return nil
+  local success, err = pcall(function()
+    local ok, uv_err = vim.uv.fs_rmdir(path)
+    if not ok then
+      error(uv_err)
     end
+  end)
+  if success then
+    return Result.ok(nil)
+  else
+    return Result.err(string.format('Failed to remove directory: %s; %s', path, tostring(err)))
   end
-  return Result.try(rmdir_func()):map_err(
-    function(err) return string.format('Failed to remove directory: %s; %s', path, tostring(err)) end
-  )
 end
 
 ---@param path string
@@ -108,19 +95,13 @@ function fs.write_file(path, content)
     return Result.err('Invalid content')
   end
 
-  ---Helper function for writing a file
-  ---@return fun(): nil
-  local function write_file_func()
-    return function()
-      local fd = assert(vim.uv.fs_open(path, 'w', 438))
-      local _ = assert(vim.uv.fs_write(fd, content))
-      return nil
-    end
+  local p = Path:new(path)
+  local success, err = pcall(function() return p:write(content, 'w') end)
+  if success then
+    return Result.ok(nil)
+  else
+    return Result.err(string.format('Failed to write file: %s; %s', path, tostring(err)))
   end
-
-  return Result.try(write_file_func()):map_err(
-    function(err) return string.format('Failed to write file: %s; %s', path, tostring(err)) end
-  )
 end
 
 ---@param path string
@@ -131,21 +112,17 @@ function fs.read_file(path)
     return Result.err('Invalid path')
   end
 
-  ---Helper function for reading a file
-  ---@return fun(): string
-  local function read_file_func()
-    return function()
-      local fd = assert(vim.uv.fs_open(path, 'r', 438))
-      local stat = assert(vim.uv.fs_fstat(fd))
-      local data = assert(vim.uv.fs_read(fd, stat.size, 0))
-      assert(vim.loop.fs_close(fd))
-      return data
-    end
+  local p = Path:new(path)
+  if not p:exists() then
+    return Result.err('File does not exist')
   end
 
-  return Result.try(read_file_func()):map_err(
-    function(err) return string.format('Failed to read file: %s; %s', path, tostring(err)) end
-  )
+  local success, content = pcall(function() return p:read() end)
+  if success then
+    return Result.ok(content)
+  else
+    return Result.err(string.format('Failed to read file: %s; %s', path, tostring(content)))
+  end
 end
 
 return fs

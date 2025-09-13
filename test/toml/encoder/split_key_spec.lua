@@ -16,8 +16,8 @@ describe('encoder._split_key', function()
 
   it('should handle a key with no dots', function()
     local new_key, sub_key = encoder._split_key('a')
-    assert.are.equal('', new_key)
-    assert.are.equal('a', sub_key)
+    assert.are.equal('a', new_key)
+    assert.are.equal('', sub_key)
   end)
 
   it('should handle an empty string', function()

@@ -110,14 +110,14 @@ describe('TOML Encoder', function()
   end)
 
   describe('parse_string function', function()
-    it('should wrap simple string in single quotes', function()
+    it('should wrap simple string in double quotes', function()
       local result = encoder._parse_string('hello')
-      assert.are.equal("'hello'", result)
+      assert.are.equal('"hello"', result)
     end)
 
     it('should escape backslashes', function()
       local result = encoder._parse_string('path\\to\\file')
-      assert.are.equal("'path\\to\\file'", result)
+      assert.are.equal('"path\\to\\file"', result)
     end)
 
     it('should use multiline quotes for strings with newlines', function()
@@ -132,7 +132,7 @@ describe('TOML Encoder', function()
 
     it('should escape special characters', function()
       local result = encoder._parse_string('test\b\t\f\r')
-      assert.are.equal("'test\b\t\f\r'", result)
+      assert.are.equal('"test\\b\\t\\f\\r"', result)
     end)
   end)
 
@@ -149,7 +149,7 @@ describe('TOML Encoder', function()
 
     it('should parse array of strings', function()
       local result = encoder._parse_array_flat({ 'a', 'b', 'c' })
-      assert.are.equal("['a', 'b', 'c']", result)
+      assert.are.equal('["a", "b", "c"]', result)
     end)
 
     it('should parse array of booleans', function()
@@ -167,7 +167,7 @@ describe('TOML Encoder', function()
 
     it('should parse dictionary with strings', function()
       local result = encoder._parse_dict_flat({ name = 'test' })
-      assert.are.equal("{ name = 'test' }", result)
+      assert.are.equal('{ name = "test" }', result)
     end)
   end)
 
@@ -255,7 +255,7 @@ describe('TOML Encoder', function()
 
       local result = encoder.encode(input)
       assert.is_string(result)
-      assert.are.equal("flag = true\ntitle = 'Test'\nvalue = 42\n", result)
+      assert.are.equal('flag = true\ntitle = "Test"\nvalue = 42', result)
     end)
 
     it('should handle nested tables', function()
@@ -274,13 +274,9 @@ describe('TOML Encoder', function()
       assert.is_string(result)
       assert.are.equal(
         [=[[database]
-host = 'localhost'
-[database]
+host = "localhost"
 port = 5432
-[database.credentials]
-password = 'secret'
-[database.credentials]
-username = 'admin'
+credentials = { password = "secret", username = "admin" }
 ]=],
         result
       )

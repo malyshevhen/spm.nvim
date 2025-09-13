@@ -170,7 +170,6 @@ local function group_by_depth_and_keys(obj)
   return _group_by_depth_and_keys(obj, _prefix, _depth, _acc)
 end
 
--- FIXME: incorrect result after indexing
 ---Combine grouped by depth and key into a single table by defining the common keys
 ---and then merging the values into a tables.
 ---
@@ -181,29 +180,45 @@ local function normalize_by_keys(t)
   ---@type table<number, table<string, any>>
   local result = {}
 
+  -- Helper function to set a value in a nested table structure
+  ---@param tbl table The table to modify
+  ---@param key_parts string[] The key parts to traverse/create
+  ---@param value any The value to set
+  local function set_nested_value(tbl, key_parts, value)
+    if #key_parts == 0 then
+      return
+    end
+
+    local current_key = key_parts[1]
+    if #key_parts == 1 then
+      -- This is the final key, set the value
+      tbl[current_key] = value
+      return
+    end
+
+    -- Create nested structure
+    tbl[current_key] = tbl[current_key] or {}
+    local remaining_parts = {}
+    for i = 2, #key_parts do
+      remaining_parts[i-1] = key_parts[i]
+    end
+    set_nested_value(tbl[current_key], remaining_parts, value)
+  end
+
   for d, o in ipairs(t) do
     result[d] = result[d] or {}
 
     for k, v in pairs(o) do
-      local new_key, sub_key = split_key(k)
-      result[d][new_key] = result[d][new_key] or {}
-
-      if d == 1 then
-        result[d][new_key] = v
-        goto continue
+      -- Split the dotted key into parts
+      local key_parts = {}
+      for part in k:gmatch('([^.]+)') do
+        table.insert(key_parts, part)
       end
 
-      if sub_key and result[d][new_key][sub_key] then
-        if type(result[d][new_key][sub_key]) ~= 'table' then
-          result[d][new_key][sub_key] = { result[d][new_key][sub_key] }
-        end
-        table.insert(result[d][new_key][sub_key], v)
-      else
-        result[d][new_key][sub_key] = v
-      end
-      ::continue::
+      set_nested_value(result[d], key_parts, v)
     end
   end
+
   return result
 end
 
@@ -282,22 +297,24 @@ local parse_dict_flat
 ---@return string The updated accumulator
 ---@diagnostic disable-next-line: unused-function, unused-local
 local function parse_string(v)
-  local quote = SYMBOL.SINGLE_QUOTE
-  -- v = v:gsub('\\', '\\') -- NOTE: Check if this is needed
+  local quote = SYMBOL.DOUBLE_QUOTE
+  -- Escape backslash first
+  v = v:gsub('\\', '\\\\')
+  -- Escape the quote
+  v = v:gsub('"', '\\"')
+  -- Escape control characters
+  v = v:gsub('\b', '\\b')
+  v = v:gsub('\t', '\\t')
+  v = v:gsub('\n', '\\n')
+  v = v:gsub('\f', '\\f')
+  v = v:gsub('\r', '\\r')
 
   -- if the string has any line breaks, make it multiline
   if v:match('^\n(.*)$') then
     quote = SYMBOL.MULTI_LINE_QUOTE
-    v = '\\n' .. v
   elseif v:match(SYMBOL.NEWLINE) then
     quote = SYMBOL.MULTI_LINE_QUOTE
   end
-
-  v = v:gsub(SYMBOL.BACKSPACE, '\\b')
-  v = v:gsub(SYMBOL.TAB, '\\t')
-  v = v:gsub(SYMBOL.FORMFEED, '\\f')
-  v = v:gsub(SYMBOL.CARRIAGE, '\\r')
-  v = v:gsub('"', '"')
 
   return quote .. v .. quote
 end
@@ -395,9 +412,47 @@ local function parse_array(k, v)
 
   local acc = ''
   if type(v) ~= 'table' then
-    acc = acc .. k .. SPACE_EQUALS_SPACE .. type(v) == 'string' and parse_string(k) or tostring(v)
+    acc = acc .. k .. SPACE_EQUALS_SPACE .. type(v) == 'string' and parse_string(v) or tostring(v)
   elseif is_array(v) then
-    acc = acc .. k .. SPACE_EQUALS_SPACE .. parse_array_flat(v)
+    -- Check if this is an array of tables (which should use [[key]] syntax)
+    -- or an array of primitives (which should use [val1, val2] syntax)
+    local has_tables = false
+    for _, val in ipairs(v) do
+      if type(val) == 'table' then
+        has_tables = true
+        break
+      end
+    end
+
+    if has_tables then
+      -- Array of tables: use [[key]] syntax
+      for _, table_val in ipairs(v) do
+        if is_dict(table_val) then
+          acc = acc
+            .. SYMBOL.DOUBLE_OPEN_BRACKET
+            .. k
+            .. SYMBOL.DOUBLE_CLOSE_BRACKET
+            .. SYMBOL.NEWLINE
+
+          for kk, vv in sorted_pairs(table_val) do
+            if type(vv) ~= 'table' then
+              acc = acc .. parse_primitive_key_val(kk, vv) .. SYMBOL.NEWLINE
+            elseif is_array(vv) then
+              acc = acc .. kk .. SPACE_EQUALS_SPACE .. parse_array_flat(vv) .. SYMBOL.NEWLINE
+            elseif is_dict(vv) then
+              acc = acc .. kk .. SPACE_EQUALS_SPACE .. parse_dict_flat(vv) .. SYMBOL.NEWLINE
+            else
+              error('Mixed table format, input is corrupted')
+            end
+          end
+        else
+          error('Mixed table format in array, input is corrupted')
+        end
+      end
+    else
+      -- Array of primitives: use inline syntax
+      acc = acc .. k .. SPACE_EQUALS_SPACE .. parse_array_flat(v)
+    end
   elseif is_dict(v) then
     local kt = SYMBOL.SINGLE_OPEN_BRACKET
       .. k
@@ -482,12 +537,39 @@ function encoder.encode(tbl)
     error('Only tables with a key-value structure are supported')
   end
 
-  -- group the table by depth and key
-  local grouped = group_by_depth_and_keys(tbl)
-  local combined = normalize_by_keys(grouped)
-
-  local result = parse_object(combined)
-  return result
+  local result = ''
+  for k, v in sorted_pairs(tbl) do
+    if type(v) == 'table' and is_array(v) and #v > 0 and type(v[1]) == 'table' and is_dict(v[1]) then
+      -- array of tables
+      for _, table_val in ipairs(v) do
+        result = result .. SYMBOL.DOUBLE_OPEN_BRACKET .. k .. SYMBOL.DOUBLE_CLOSE_BRACKET .. SYMBOL.NEWLINE
+        for kk, vv in sorted_pairs(table_val) do
+          if type(vv) ~= 'table' then
+            result = result .. parse_primitive_key_val(kk, vv) .. SYMBOL.NEWLINE
+          elseif is_array(vv) then
+            result = result .. kk .. SPACE_EQUALS_SPACE .. parse_array_flat(vv) .. SYMBOL.NEWLINE
+          elseif is_dict(vv) then
+            result = result .. kk .. SPACE_EQUALS_SPACE .. parse_dict_flat(vv) .. SYMBOL.NEWLINE
+          else
+            error('Mixed table format, input is corrupted')
+          end
+        end
+      end
+    else
+      -- normal
+      if type(v) ~= 'table' then
+        result = result .. parse_primitive_key_val(k, v) .. SYMBOL.NEWLINE
+      elseif is_array(v) then
+        result = result .. parse_array(k, v) .. SYMBOL.NEWLINE
+      elseif is_dict(v) then
+        local kt = SYMBOL.SINGLE_OPEN_BRACKET .. k .. SYMBOL.SINGLE_CLOSE_BRACKET .. SYMBOL.NEWLINE
+        result = result .. parse_dict_table(kt, k, v)
+      else
+        error('Mixed table format, input is corrupted')
+      end
+    end
+  end
+  return result:gsub('\n$', '')
 end
 
 -- Export local functions for testing
