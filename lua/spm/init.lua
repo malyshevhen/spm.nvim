@@ -2,7 +2,7 @@ local logger = require('spm.lib.logger')
 
 ---@class SimplePM
 local spm = {
-  config_module = require('spm.config'),
+  config_module = require('spm.core.config'),
   keymap = require('spm.keymap'),
   plugin_manager = require('spm.plugin_manager'),
 }
