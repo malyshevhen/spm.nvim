@@ -21,16 +21,11 @@ function spm.setup(user_config)
   if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
 
   logger.debug('Initialize config', 'SimplePM')
-  local cfg_ok, cfg_err = spm.config_module.create(cfg)
-  if cfg_err then error(cfg_err) end
-  cfg = cfg_ok
-
-  logger.debug('Check required config files', 'SimplePM')
-  local ok, err = spm.config_module.validate_files_exists(cfg)
-  if not ok then error(err) end
+  local valid_cfg, cfg_err = spm.config_module.create(cfg)
+  if cfg_err or not valid_cfg then error(cfg_err or 'Configuration failed to validate') end
 
   logger.debug('Setup SimplePM', 'SimplePM')
-  local pm_ok, pm_err = spm.plugin_manager.setup(cfg)
+  local pm_ok, pm_err = spm.plugin_manager.setup(valid_cfg)
   if not pm_ok then error(pm_err) end
 
   logger.info('Initialization complete', 'SimplePM')

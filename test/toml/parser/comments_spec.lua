@@ -1,7 +1,7 @@
 describe('comments', function()
   local TOML
 
-  before_each(function() TOML = require('spm.vendor.toml') end)
+  before_each(function() TOML = require('spm.lib.toml') end)
 
   it('everywhere', function()
     local obj = TOML.parse([=[

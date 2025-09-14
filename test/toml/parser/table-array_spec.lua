@@ -1,7 +1,7 @@
 describe('table array parsing', function()
   local TOML
 
-  before_each(function() TOML = require('spm.vendor.toml') end)
+  before_each(function() TOML = require('spm.lib.toml') end)
 
   it('implicit', function()
     local obj = TOML.parse([=[
@@ -33,8 +33,8 @@ last_name = "Seger"]=])
     local sol = {
       people = {
         { first_name = 'Bruce', last_name = 'Springsteen' },
-        { first_name = 'Eric', last_name = 'Clapton' },
-        { first_name = 'Bob', last_name = 'Seger' },
+        { first_name = 'Eric',  last_name = 'Clapton' },
+        { first_name = 'Bob',   last_name = 'Seger' },
       },
     }
     assert.same(sol, obj)

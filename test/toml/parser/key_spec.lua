@@ -1,7 +1,7 @@
 describe('key parsing', function()
   local TOML
 
-  before_each(function() TOML = require('spm.vendor.toml') end)
+  before_each(function() TOML = require('spm.lib.toml') end)
 
   it('no space', function()
     local obj = TOML.parse([=[

@@ -1,12 +1,21 @@
 local logger = require('spm.lib.logger')
+local Validator = require('spm.core.validator')
 
----@class spm.PluginSpec
+---@class spm.PluginSpec: spm.Valid
 ---@field name string? Optional human-readable name for the plugin
 ---@field src string Full URL to the plugin repository (required)
 ---@field version string? Version or branch to install (defaults to master if not specified)
 ---@field dependencies string[]? List of dependency plugin URLs
 local PluginSpec = {}
 PluginSpec.__index = PluginSpec
+
+---@type spm.Schema.Definition
+PluginSpec.schema = {
+  name = { type = 'string', optional = true },
+  src = { type = 'string', regex = '^https://' },
+  version = { type = 'string', optional = true },
+  dependencies = { type = 'table', optional = true },
+}
 
 ---@param user_config table? User-provided configuration
 ---@return spm.PluginSpec?, string?
@@ -26,15 +35,9 @@ function PluginSpec.create(user_config)
 end
 
 ---Validates a single plugin specification
----@return boolean?, string?
+---@return boolean, string?
 function PluginSpec:valid()
-  if type(self) ~= 'table' then return false, 'Plugin must be a table' end
-
-  if not self.src or type(self.src) ~= 'string' or not self.src:match('^https://') then
-    return false, "Plugin must have a 'src' field with a valid HTTPS URL"
-  end
-
-  return true
+  return Validator.validate(self)
 end
 
 ---@alias PluginSpecs spm.PluginSpec[]
@@ -42,12 +45,19 @@ end
 ---@class spm.LanguageServerSpec
 ---@field servers string[] List of language servers to enable
 
----@class spm.PluginConfig
+---@class spm.PluginConfig: spm.Valid
 ---@field plugins spm.PluginSpec[] Array of plugin configurations
 ---@field language_servers spm.LanguageServerSpec? Configuration for language servers
 ---@field filetypes table? Configuration for filetype mappings
 local PluginConfig = {}
 PluginConfig.__index = PluginConfig
+
+---@type spm.Schema.Definition
+PluginConfig.schema = {
+  plugins = { type = 'table' },
+  language_servers = { type = 'table', optional = true },
+  filetypes = { type = 'table', optional = true },
+}
 
 ---@param user_config table? User-provided configuration
 ---@return spm.PluginConfig?, string?
@@ -84,24 +94,9 @@ function PluginConfig.create(user_config)
 end
 
 ---Validates a complete plugin configuration
----@return boolean?, string?
+---@return boolean, string?
 function PluginConfig:valid()
-  if type(self) ~= 'table' then return false, 'Config must be a table' end
-
-  if not self.plugins or type(self.plugins) ~= 'table' then
-    return false, "Config must have a 'plugins' field of type array"
-  end
-
-  for i, plugin in ipairs(self.plugins) do
-    if not plugin.valid then
-      return false, string.format('Plugin at index %d: invalid plugin', i)
-    end
-
-    local ok, err = plugin:valid()
-    if not ok then return false, string.format('Plugin at index %d: %s', i, err) end
-  end
-
-  return true
+  return Validator.validate(self)
 end
 
 ---Extracts the repository name from a Git URL

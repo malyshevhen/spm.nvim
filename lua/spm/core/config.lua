@@ -1,4 +1,17 @@
----@class spm.Config
+local Validator = require('spm.core.validator')
+
+--- A custom validator that checks if a path points to a readable file.
+---@param path string The file path to check.
+---@return boolean, string?
+local function isFileReadable(path)
+  if vim.fn.filereadable(path) == 1 then
+    return true
+  else
+    return false, string.format("file is not readable or does not exist at '%s'", path)
+  end
+end
+
+---@class spm.Config : spm.Valid
 ---@field plugins_toml_path string? Path to plugins.toml file (nil will default to config_root/plugins.toml)
 ---@field lock_file_path string? Path to the lock file
 ---@field auto_source_configs boolean? Whether to automatically source config files
@@ -7,6 +20,16 @@
 ---@field debug_mode boolean? Enable debug logging
 local Config = {}
 Config.__index = Config
+
+---@type spm.Schema.Definition
+Config.schema = {
+  plugins_toml_path = { type = 'string', optional = true, custom = isFileReadable },
+  lock_file_path = { type = 'string', optional = true },
+  auto_source_configs = { type = 'boolean' },
+  auto_setup_keymaps = { type = 'boolean' },
+  show_startup_messages = { type = 'boolean' },
+  debug_mode = { type = 'boolean' },
+}
 
 --- Default configuration values
 ---@type spm.Config
@@ -20,39 +43,12 @@ local DEFAULT_CONFIG = {
 }
 
 --- Validates the configuration
----@return table?, string?
-function Config:valid()
-  if type(self) ~= 'table' then return nil, 'Configuration must be a table' end
-
-  -- Validate required fields and types
-  if self.plugins_toml_path ~= nil and type(self.plugins_toml_path) ~= 'string' then
-    return nil, 'plugins_toml_path must be a string or nil'
-  end
-
-  if self.lock_file_path ~= nil and type(self.lock_file_path) ~= 'string' then
-    return nil, 'lock_file_path must be a string or nil'
-  end
-
-  if type(self.auto_source_configs) ~= 'boolean' then
-    return nil, 'auto_source_configs must be a boolean'
-  end
-
-  if type(self.auto_setup_keymaps) ~= 'boolean' then
-    return nil, 'auto_setup_keymaps must be a boolean'
-  end
-
-  if type(self.show_startup_messages) ~= 'boolean' then
-    return nil, 'show_startup_messages must be a boolean'
-  end
-
-  if type(self.debug_mode) ~= 'boolean' then return nil, 'debug_mode must be a boolean' end
-
-  return self
-end
+---@return boolean, string?
+function Config:valid() return Validator.validate(self) end
 
 --- Creates a new configuration by merging user config with defaults
 ---@param user_config table? User-provided configuration
----@return table?, string?
+---@return spm.Config?, string?
 function Config.create(user_config)
   if user_config and type(user_config) ~= 'table' then
     return nil, 'Configuration must be a table'
@@ -64,20 +60,12 @@ function Config.create(user_config)
   config = setmetatable(config, Config)
 
   -- Final validation of resolved config
-  return config:valid()
+  local ok, err = config:valid()
+  if not ok then return nil, err end
+
+  return config
 end
 
 function Config.default() return vim.deepcopy(DEFAULT_CONFIG) end
-
----Validates that required files exist for the configuration
----@return boolean?, string?
-function Config:validate_files_exists()
-  -- Check if plugins.toml exists
-  if vim.fn.filereadable(self.plugins_toml_path) == 0 then
-    return nil, string.format('plugins.toml not found at: %s', self.plugins_toml_path)
-  end
-
-  return true
-end
 
 return Config

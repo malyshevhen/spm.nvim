@@ -1,7 +1,7 @@
 describe('encoding', function()
   local TOML
 
-  before_each(function() TOML = require('spm.vendor.toml') end)
+  before_each(function() TOML = require('spm.lib.toml') end)
 
   it('array', function()
     local obj = TOML.encode({ a = { 'foo', 'bar' } })

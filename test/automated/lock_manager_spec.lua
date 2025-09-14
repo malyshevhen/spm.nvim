@@ -20,10 +20,10 @@ describe('lock_manager', function()
     assert.are.same(lock_data, read_data)
   end)
 
-  it('should return nil if the lock file does not exist', function()
+  it('should return empty table if the lock file does not exist', function()
     local read_data, read_err = lock_manager.read(lock_file_path)
     assert.is_nil(read_err)
-    assert.is_nil(read_data)
+    assert.is_same(read_data, {})
   end)
 
   it('should write data to a lock file', function()

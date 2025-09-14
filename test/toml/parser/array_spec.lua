@@ -1,7 +1,7 @@
 describe('array parsing', function()
   local TOML
 
-  before_each(function() TOML = require('spm.vendor.toml') end)
+  before_each(function() TOML = require('spm.lib.toml') end)
 
   it('empty', function()
     local obj = TOML.parse([=[
@@ -26,7 +26,7 @@ ints = [1,2,3]]=])
 mixed = [[1, 2], ["a", "b"], [1.1, 2.1]]]=])
     local sol = {
       mixed = {
-        { 1, 2 },
+        { 1,   2 },
         { 'a', 'b' },
         { 1.1, 2.1 },
       },

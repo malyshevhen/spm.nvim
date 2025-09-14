@@ -23,7 +23,7 @@ local function parse(content)
   return parsed
 end
 
----Encodes a Lua table to TOML format (using vendor library)
+---Encodes a Lua table to TOML format
 ---@param value table The table to encode
 ---@return string?, string?
 local function encode(value)
