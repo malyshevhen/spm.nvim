@@ -11,26 +11,27 @@ describe('lock_manager', function()
     local lock_data = {
       hash = 'test_hash',
     }
-    local result = lock_manager.write(lock_file_path, lock_data)
-    assert.is_true(result:is_ok())
+    local ok, err = lock_manager.write(lock_file_path, lock_data)
+    assert.is_true(ok)
 
-    local read_result = lock_manager.read(lock_file_path)
-    assert.is_true(read_result:is_ok())
-    assert.are.same(lock_data, read_result:unwrap())
+    local read_data, read_err = lock_manager.read(lock_file_path)
+    assert.is_nil(read_err)
+    assert.is_table(read_data)
+    assert.are.same(lock_data, read_data)
   end)
 
   it('should return nil if the lock file does not exist', function()
-    local read_result = lock_manager.read(lock_file_path)
-    assert.is_true(read_result:is_ok())
-    assert.is_nil(read_result:unwrap())
+    local read_data, read_err = lock_manager.read(lock_file_path)
+    assert.is_nil(read_err)
+    assert.is_nil(read_data)
   end)
 
   it('should write data to a lock file', function()
     local lock_data = {
       hash = 'test_hash',
     }
-    local result = lock_manager.write(lock_file_path, lock_data)
-    assert.is_true(result:is_ok())
+    local ok, err = lock_manager.write(lock_file_path, lock_data)
+    assert.is_true(ok)
 
     local file = io.open(lock_file_path, 'r')
     assert.are.not_nil(file)
@@ -48,9 +49,10 @@ describe('lock_manager', function()
 
   it('should return false if the lock file is not stale', function()
     local plugins_toml_content = 'test content'
-    local hash_result = crypto.generate_hash(plugins_toml_content)
+    local hash, err = crypto.generate_hash(plugins_toml_content)
+    assert.is_nil(err)
     local lock_data = {
-      hash = hash_result:unwrap(),
+      hash = hash,
     }
     local is_stale = lock_manager.is_stale(plugins_toml_content, lock_data)
     assert.is_false(is_stale)

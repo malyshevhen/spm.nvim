@@ -1,15 +1,15 @@
-local Result = require('spm.lib.error').Result
+local safe_call = require('spm.lib.util').safe_call
 
 ---Generates a SHA256 hash for the given content
 ---@param content string The content to hash
----@return spm.Result<string>
+---@return string?, string?
 local function generate_hash(content)
-  if type(content) ~= 'string' then return Result.err('Content must be a string') end
+  if type(content) ~= 'string' then return nil, 'Content must be a string' end
 
-  local success, hash = pcall(vim.fn.sha256, content)
-  if not success then return Result.err('Failed to generate hash') end
+  local hash, err = safe_call(vim.fn.sha256, content)
+  if err then return nil, 'Failed to generate hash' end
 
-  return Result.ok(hash)
+  return hash
 end
 
 return {

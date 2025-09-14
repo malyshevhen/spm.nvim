@@ -25,16 +25,16 @@ describe('pack_installer', function()
       },
     }
 
-    local result = pack_installer.install(plugins)
-    assert.is_true(result:is_ok())
+    local ok, err = pack_installer.install(plugins)
+    assert.is_true(ok)
     assert.is_true(called)
   end)
 
   it('should return an error if vim.pack is not available', function()
     vim.pack = {}
-    local result = pack_installer.install({ { src = 'https://github.com/test/test' } })
-    assert.is_true(result:is_err())
-    assert.are.same('vim.pack is not available - requires Neovim 0.12+', result.error.message)
+    local ok, err = pack_installer.install({ { src = 'https://github.com/test/test' } })
+    assert.is_nil(ok)
+    assert.is_string(err)
   end)
 
   it('should do nothing if no plugins are provided', function()
@@ -44,8 +44,8 @@ describe('pack_installer', function()
     }
 
     ---@diagnostic disable-next-line: param-type-mismatch
-    local result = pack_installer.install(nil)
-    assert.is_true(result:is_ok())
+    local ok, err = pack_installer.install(nil)
+    assert.is_true(ok)
     assert.is_false(called)
   end)
 end)

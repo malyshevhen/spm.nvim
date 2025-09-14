@@ -1,12 +1,7 @@
-local Result = require('spm.lib.error').Result
-local crypto = require('spm.lib.crypto')
-local fs = require('spm.lib.fs')
-local lock_manager = require('spm.core.lock_manager')
-local plugin_types = require('spm.core.plugin_types')
-local toml_parser = require('spm.lib.toml_parser')
-local PluginConfig = plugin_types.PluginConfig
 local Path = require('plenary.path')
 local uv = vim.loop
+
+local crypto, fs, lock_manager, plugin_types, toml_parser, PluginConfig
 
 -- Helper function to convert plain table to PluginConfig
 local function create_plugin_config(data)
@@ -15,22 +10,6 @@ local function create_plugin_config(data)
 end
 
 -- Helper function to retry flaky operations
-local function retry_operation(operation, max_retries)
-  max_retries = max_retries or 3
-  for i = 1, max_retries do
-    local success, result = pcall(operation)
-    if success then return result end
-
-    if i < max_retries then
-      -- Small delay between retries
-      if vim and vim.loop then
-        uv.sleep(30) -- 10ms
-      end
-    end
-  end
-  error('Operation failed after ' .. max_retries .. ' retries')
-end
-
 describe('plugin_manager integration', function()
   local test_env = {}
 
@@ -45,12 +24,19 @@ describe('plugin_manager integration', function()
     package.loaded['spm.core.lock_manager'] = nil
     package.loaded['spm.lib.crypto'] = nil
     package.loaded['spm.lib.fs'] = nil
+    package.loaded['spm.lib.util'] = nil
+    package.loaded['spm.lib.toml'] = nil
+    package.loaded['spm.lib.toml.parser'] = nil
+    package.loaded['spm.lib.toml.encoder'] = nil
+    package.loaded['spm.core.plugin_types'] = nil
 
     -- Reload modules with fresh state
     toml_parser = require('spm.lib.toml_parser')
     lock_manager = require('spm.core.lock_manager')
     crypto = require('spm.lib.crypto')
     fs = require('spm.lib.fs')
+    plugin_types = require('spm.core.plugin_types')
+    PluginConfig = plugin_types.PluginConfig
   end)
 
   after_each(function()
@@ -90,7 +76,11 @@ describe('plugin_manager integration', function()
     return temp_file.filename
   end
 
-  local function parse_plugins_toml(path) return fs.read_file(path):flat_map(toml_parser.parse) end
+  local function parse_plugins_toml(path)
+    local content, err = fs.read_file(path)
+    if err then return nil, err end
+    return toml_parser.parse(content)
+  end
 
   -- Helper function to setup standard test configuration
   local function setup_test_config()
@@ -111,13 +101,9 @@ src = "https://github.com/test/plugin"
 ]==]
       local test_plugins_toml_path = create_temp_file(content)
 
-      local result = retry_operation(
-        function() return parse_plugins_toml(test_plugins_toml_path) end
-      )
+      local config, err = parse_plugins_toml(test_plugins_toml_path)
 
-      assert.is_true(result:is_ok())
-
-      local config = result:unwrap()
+      assert.is_nil(err)
       assert.is_table(config)
       assert.is_table(config.plugins)
       assert.are.equal(1, #config.plugins)
@@ -128,17 +114,14 @@ src = "https://github.com/test/plugin"
     it('should validate parsed configuration', function()
       local test_plugins_toml_path = setup_test_config()
 
-      local result = retry_operation(
-        function() return parse_plugins_toml(test_plugins_toml_path) end
-      )
-      assert.is_true(result:is_ok())
+      local raw_config, err = parse_plugins_toml(test_plugins_toml_path)
+      assert.is_nil(err)
 
-      local raw_config = result:unwrap()
       local config = create_plugin_config(raw_config)
       assert.is_function(config.valid)
 
-      local validation_result = config:valid()
-      assert.is_true(validation_result:is_ok())
+      local ok, valid_err = config:valid()
+      assert.is_true(ok)
     end)
 
     it('should flatten plugins including dependencies', function()
@@ -150,12 +133,9 @@ dependencies = ["https://github.com/test/dep"]
 ]==]
       local test_plugins_toml_path = create_temp_file(content)
 
-      local result = retry_operation(
-        function() return parse_plugins_toml(test_plugins_toml_path) end
-      )
-      assert.is_true(result:is_ok())
+      local raw_config, err = parse_plugins_toml(test_plugins_toml_path)
+      assert.is_nil(err)
 
-      local raw_config = result:unwrap()
       local config = create_plugin_config(raw_config)
       local flattened = config:flatten_plugins()
 
@@ -177,18 +157,12 @@ dependencies = ["https://github.com/test/dep"]
       }
 
       -- Write lock file with retry
-      local write_result = retry_operation(
-        function() return lock_manager.write(test_lock_file_path, lock_data) end
-      )
-      assert.is_true(write_result:is_ok())
+      local ok, write_err = lock_manager.write(test_lock_file_path, lock_data)
+      assert.is_true(ok)
 
       -- Read lock file with retry
-      local read_result = retry_operation(
-        function() return lock_manager.read(test_lock_file_path) end
-      )
-      assert.is_true(read_result:is_ok())
-
-      local read_data = read_result:unwrap()
+      local read_data, read_err = lock_manager.read(test_lock_file_path)
+      assert.is_nil(read_err)
       assert.is_table(read_data)
 
       -- The data should contain the same structure
@@ -203,10 +177,9 @@ dependencies = ["https://github.com/test/dep"]
 
     it('should detect stale lock files', function()
       local plugins_content = 'test content'
-      local hash_result = crypto.generate_hash(plugins_content)
-      assert.is_true(hash_result:is_ok())
+      local correct_hash, err = crypto.generate_hash(plugins_content)
+      assert.is_nil(err)
 
-      local correct_hash = hash_result:unwrap()
       local wrong_hash = 'wrong_hash'
 
       -- Test with correct hash (not stale)
@@ -231,17 +204,15 @@ dependencies = ["https://github.com/test/dep"]
       local test_lock_file_path = create_temp_file(nil)
 
       -- 1. Parse configuration with retry
-      local parse_result = retry_operation(
-        function() return parse_plugins_toml(test_plugins_toml_path) end
-      )
-      assert.is_true(parse_result:is_ok())
+      local raw_config, err = parse_plugins_toml(test_plugins_toml_path)
+      assert.is_nil(err)
+      assert.is_table(raw_config)
 
-      local raw_config = parse_result:unwrap()
       local config = create_plugin_config(raw_config)
 
       -- 2. Validate configuration
-      local validation_result = config:valid()
-      assert.is_true(validation_result:is_ok())
+      local ok, valid_err = config:valid()
+      assert.is_true(ok)
 
       -- 3. Flatten plugins
       local flattened_plugins = config:flatten_plugins()
@@ -249,41 +220,28 @@ dependencies = ["https://github.com/test/dep"]
       assert.are.equal(1, #flattened_plugins)
 
       -- 4. Generate hash of original content with retry
-      local content_result = retry_operation(function()
-        return Result.try(function()
-          local file = io.open(test_plugins_toml_path, 'r')
-          if not file then error('Cannot open file') end
+      local content, content_err = fs.read_file(test_plugins_toml_path)
+      assert.is_nil(content_err)
+      assert.is_string(content)
 
-          local content = file:read('*a')
-          file:close()
-          return content
-        end)
-      end)
-      assert.is_true(content_result:is_ok())
-
-      local hash_result = crypto.generate_hash(content_result:unwrap())
-      assert.is_true(hash_result:is_ok())
+      local hash, hash_err = crypto.generate_hash(content)
+      assert.is_nil(hash_err)
 
       -- 5. Create and write lock file
       local lock_data = {
-        hash = hash_result:unwrap(),
+        hash = hash,
         plugins = flattened_plugins,
         language_servers = config.language_servers or {},
         filetypes = config.filetypes or {},
       }
 
-      local write_result = retry_operation(
-        function() return lock_manager.write(test_lock_file_path, lock_data) end
-      )
-      assert.is_true(write_result:is_ok())
+      local ok, write_err = lock_manager.write(test_lock_file_path, lock_data)
+      assert.is_true(ok)
 
       -- 6. Verify lock file can be read back
-      local read_result = retry_operation(
-        function() return lock_manager.read(test_lock_file_path) end
-      )
-      assert.is_true(read_result:is_ok())
-
-      local read_data = read_result:unwrap()
+      local read_data, read_err = lock_manager.read(test_lock_file_path)
+      assert.is_nil(read_err)
+      assert.is_table(read_data)
       assert.are.same(lock_data.hash, read_data.hash)
       assert.are.same(lock_data.plugins, read_data.plugins)
     end)
@@ -309,12 +267,9 @@ servers = ["lua_ls", "gopls"]
 ]==]
       local test_plugins_toml_path = create_temp_file(content)
 
-      local parse_result = retry_operation(
-        function() return parse_plugins_toml(test_plugins_toml_path) end
-      )
-      assert.is_true(parse_result:is_ok())
-
-      local config = parse_result:unwrap()
+      local config, err = parse_plugins_toml(test_plugins_toml_path)
+      assert.is_nil(err)
+      assert.is_table(config)
       assert.are.equal(2, #config.plugins)
       assert.is_table(config.language_servers)
       assert.are.equal(2, #config.language_servers.servers)
@@ -324,23 +279,18 @@ servers = ["lua_ls", "gopls"]
 
   describe('error handling', function()
     it('should handle non-existent files gracefully', function()
-      local result = parse_plugins_toml('non_existent_file.toml')
-      assert.is_true(result:is_err())
-
-      local error_msg = result:unwrap_err().message
-      assert.is_string(error_msg)
+      local config, err = parse_plugins_toml('non_existent_file.toml')
+      assert.is_nil(config)
+      assert.is_string(err)
     end)
 
     it('should handle malformed TOML files', function()
       local content = '[[plugins]\nname = "broken"\n' -- Missing closing bracket
       local test_plugins_toml_path = create_temp_file(content)
 
-      local result = parse_plugins_toml(test_plugins_toml_path)
-      print(vim.inspect(result))
-      assert.is_true(result:is_err())
-
-      local error_msg = result:unwrap_err().message
-      assert.is_string(error_msg)
+      local config, err = parse_plugins_toml(test_plugins_toml_path)
+      assert.is_nil(config)
+      assert.is_string(err)
     end)
 
     it('should validate plugin specifications', function()
@@ -351,29 +301,16 @@ src = "not-a-valid-url"
 ]==]
       local test_plugins_toml_path = create_temp_file(content)
 
-      local parse_result = parse_plugins_toml(test_plugins_toml_path)
+      local raw_config, parse_err = parse_plugins_toml(test_plugins_toml_path)
 
-      if parse_result:is_ok() then
-        local raw_config = parse_result:unwrap()
+      if raw_config then
         local config = create_plugin_config(raw_config)
-        local validation_result = config:valid()
-        assert.is_true(validation_result:is_err())
-
-        local error_data = validation_result:unwrap_err()
-        -- Handle both string and table error formats
-        if type(error_data) == 'table' then
-          assert.is_string(error_data.message)
-        else
-          assert.is_string(error_data)
-        end
+        local ok, valid_err = config:valid()
+        assert.is_false(ok)
+        assert.is_string(valid_err)
       else
         -- Parsing failed, which is also acceptable for invalid URLs
-        local error_data = parse_result:unwrap_err()
-        if type(error_data) == 'table' then
-          assert.is_string(error_data.message)
-        else
-          assert.is_string(error_data)
-        end
+        assert.is_string(parse_err)
       end
     end)
   end)

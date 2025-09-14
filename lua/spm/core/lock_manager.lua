@@ -2,25 +2,23 @@ local crypto = require('spm.lib.crypto')
 local fs = require('spm.lib.fs')
 local logger = require('spm.lib.logger')
 local toml_parser = require('spm.lib.toml_parser')
-local Result = require('spm.lib.error').Result
 
 ---Reads and parses the lock file
 ---@param lock_file_path string
----@return spm.Result<table>
+---@return table?, string?
 local function read(lock_file_path)
   logger.debug(string.format('Reading lock file: %s', lock_file_path), 'LockManager')
   if vim.fn.filereadable(lock_file_path) ~= 1 then
     logger.debug('Lock file not found', 'LockManager')
-    return Result.ok(nil)
+    return {}
   end
 
-  local content_result = fs.read_file(lock_file_path)
-  if content_result:is_err() then return content_result end
+  local content, err = fs.read_file(lock_file_path)
+  if err or not content then return nil, err end
 
-  local content = content_result:unwrap()
   if content == '' then
     logger.debug('Lock file is empty', 'LockManager')
-    return Result.ok({})
+    return {}
   end
 
   return toml_parser.parse(content)
@@ -29,7 +27,7 @@ end
 ---Writes data to the lock file
 ---@param lock_file_path string
 ---@param lock_data table
----@return spm.Result<boolean>
+---@return boolean?, string?
 local function write(lock_file_path, lock_data)
   -- Create the directory if it doesn't exist
   local dir = vim.fn.fnamemodify(lock_file_path, ':h')
@@ -38,33 +36,31 @@ local function write(lock_file_path, lock_data)
     local success = vim.fn.mkdir(dir, 'p')
     if success == 0 then
       logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
-      return Result.err(string.format('Failed to create directory: %s', dir))
+      return nil, string.format('Failed to create directory: %s', dir)
     end
   end
 
   -- Check again after creating the directory
   if vim.fn.isdirectory(dir) == 0 then
     logger.error(string.format('Failed to create directory: %s', dir), 'LockManager')
-    return Result.err(string.format('Failed to create directory: %s', dir))
+    return nil, string.format('Failed to create directory: %s', dir)
   end
 
   -- Read the lock data
   logger.debug(string.format('Writing to lock file: %s', lock_file_path), 'LockManager')
 
-  local encoded_data_result = toml_parser.encode(lock_data)
-  if encoded_data_result:is_err() then
+  local encoded_data, err = toml_parser.encode(lock_data)
+  if err or not encoded_data then
     logger.error('Failed to encode lock data', 'LockManager')
-    return Result.err(encoded_data_result:unwrap_err())
+    return nil, err
   end
 
-  -- Check again after encoding
-  local encoded_data = encoded_data_result:unwrap()
-
   -- Write the lock file
-  return fs.write_file(lock_file_path, encoded_data):map(function()
-    logger.info(string.format('Lock file updated at: %s', lock_file_path), 'LockManager')
-    return true
-  end)
+  local ok, write_err = fs.write_file(lock_file_path, encoded_data)
+  if not ok then return nil, write_err end
+
+  logger.info(string.format('Lock file updated at: %s', lock_file_path), 'LockManager')
+  return true
 end
 
 ---Checks if the lock file is stale by comparing hashes
@@ -78,13 +74,13 @@ local function is_stale(plugins_toml_content, lock_data)
     return true
   end
 
-  local new_hash_result = crypto.generate_hash(plugins_toml_content)
-  if new_hash_result:is_err() then
+  local new_hash, err = crypto.generate_hash(plugins_toml_content)
+  if err then
     logger.error('Failed to generate hash for plugins.toml', 'LockManager')
     return true -- Treat as stale if hashing fails
   end
 
-  if new_hash_result:unwrap() ~= lock_data.hash then
+  if new_hash ~= lock_data.hash then
     logger.info('Lock file is stale: plugins.toml has changed.', 'LockManager')
     return true
   end

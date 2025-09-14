@@ -21,25 +21,28 @@ describe('fs', function()
       local file_path = temp_dir:joinpath('test_file.txt').filename
       local content = 'hello world'
 
-      local write_result = fs.write_file(file_path, content)
-      assert.is_true(write_result:is_ok())
+      local ok, write_err = fs.write_file(file_path, content)
+      assert.is_true(ok)
 
-      local read_result = fs.read_file(file_path)
-      assert.is_true(read_result:is_ok())
-      assert.are.equal(content, read_result:unwrap())
+      local read_content, read_err = fs.read_file(file_path)
+      assert.is_nil(read_err)
+      assert.is_string(read_content)
+      assert.are.equal(content, read_content)
     end)
 
     it('should return an error when reading a non-existent file', function()
       local file_path = temp_dir:joinpath('non_existent.txt').filename
-      local result = fs.read_file(file_path)
-      assert.is_true(result:is_err())
+      local content, err = fs.read_file(file_path)
+      assert.is_nil(content)
+      assert.is_string(err)
     end)
 
     it('should return an error when writing with invalid content', function()
       local file_path = temp_dir:joinpath('test_file.txt').filename
       ---@diagnostic disable-next-line: param-type-mismatch
-      local result = fs.write_file(file_path, nil)
-      assert.is_true(result:is_err())
+      local ok, err = fs.write_file(file_path, nil)
+      assert.is_nil(ok)
+      assert.is_string(err)
     end)
   end)
 
@@ -48,8 +51,8 @@ describe('fs', function()
       local file_path = temp_dir:joinpath('test_file.txt').filename
       fs.write_file(file_path, 'some content')
 
-      local delete_result = fs.delete_file(file_path)
-      assert.is_true(delete_result:is_ok())
+      local ok, err = fs.delete_file(file_path)
+      assert.is_true(ok)
 
       -- Check that the file no longer exists
       local stat = vim.loop.fs_stat(file_path)
@@ -58,8 +61,9 @@ describe('fs', function()
 
     it('should return an error when deleting a non-existent file', function()
       local file_path = temp_dir:joinpath('non_existent.txt').filename
-      local result = fs.delete_file(file_path)
-      assert.is_true(result:is_err())
+      local ok, err = fs.delete_file(file_path)
+      assert.is_nil(ok)
+      assert.is_string(err)
     end)
   end)
 
@@ -67,8 +71,8 @@ describe('fs', function()
     it('should create and remove a directory', function()
       local dir_path = temp_dir:joinpath('new_dir').filename
 
-      local mkdir_result = fs.mkdir(dir_path)
-      assert.is_true(mkdir_result:is_ok())
+      local ok, mkdir_err = fs.mkdir(dir_path)
+      assert.is_true(ok)
 
       -- Check that the directory exists
       local stat = vim.loop.fs_stat(dir_path)
@@ -76,8 +80,8 @@ describe('fs', function()
       ---@diagnostic disable-next-line: need-check-nil
       assert.are.equal('directory', stat.type)
 
-      local rmdir_result = fs.rmdir(dir_path)
-      assert.is_true(rmdir_result:is_ok())
+      local ok2, rmdir_err = fs.rmdir(dir_path)
+      assert.is_true(ok2)
 
       -- Check that the directory no longer exists
       stat = vim.loop.fs_stat(dir_path)
@@ -88,14 +92,16 @@ describe('fs', function()
       local dir_path = temp_dir:joinpath('new_dir').filename
       fs.mkdir(dir_path)
 
-      local result = fs.mkdir(dir_path)
-      assert.is_true(result:is_err())
+      local ok, err = fs.mkdir(dir_path)
+      assert.is_nil(ok)
+      assert.is_string(err)
     end)
 
     it('should return an error when removing a non-existent directory', function()
       local dir_path = temp_dir:joinpath('non_existent_dir').filename
-      local result = fs.rmdir(dir_path)
-      assert.is_true(result:is_err())
+      local ok, err = fs.rmdir(dir_path)
+      assert.is_nil(ok)
+      assert.is_string(err)
     end)
   end)
 end)

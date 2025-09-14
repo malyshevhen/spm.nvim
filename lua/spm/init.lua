@@ -3,7 +3,7 @@ local logger = require('spm.lib.logger')
 ---@class SimplePM
 local spm = {
   config_module = require('spm.core.config'),
-  keymap = require('spm.core.keymap'),
+  keymap = require('spm.core.keymap').map,
   plugin_manager = require('spm.core.plugin_manager'),
 }
 
@@ -21,20 +21,24 @@ function spm.setup(user_config)
   if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
 
   logger.debug('Initialize config', 'SimplePM')
-  cfg = spm.config_module.create(cfg):unwrap()
+  local cfg_ok, cfg_err = spm.config_module.create(cfg)
+  if cfg_err then error(cfg_err) end
+  cfg = cfg_ok
 
   logger.debug('Check required config files', 'SimplePM')
-  spm.config_module.validate_files_exists(cfg):unwrap()
+  local ok, err = spm.config_module.validate_files_exists(cfg)
+  if not ok then error(err) end
 
   logger.debug('Setup SimplePM', 'SimplePM')
-  spm.plugin_manager.setup(cfg):unwrap()
+  local pm_ok, pm_err = spm.plugin_manager.setup(cfg)
+  if not pm_ok then error(pm_err) end
 
   logger.info('Initialization complete', 'SimplePM')
 end
 
 ---Get the keymap compatibility system for direct use
 ---@param keymaps spm.KeymapSpec[]? Keymaps to map
-function spm.keymaps(keymaps) spm.keymap.map(keymaps or {}) end
+function spm.keymaps(keymaps) return spm.keymap(keymaps or {}) end
 
 return setmetatable(spm, {
   __newindex = function(_, key, _)

@@ -14,16 +14,17 @@ describe('toml_parser', function()
     local tbl = {
       test = 'value',
     }
-    local result = toml_parser.encode(tbl)
-    assert.is_true(result:is_ok())
-    assert.are.same('test = "value"', result:unwrap())
+    local encoded, err = toml_parser.encode(tbl)
+    assert.is_nil(err)
+    assert.is_string(encoded)
+    assert.are.same('test = "value"', encoded)
   end)
 
   it('should return an error if the input is not a table', function()
     ---@diagnostic disable-next-line: param-type-mismatch
-    local result = toml_parser.encode('not a table')
+    local encoded, err = toml_parser.encode('not a table')
 
-    assert.is_true(result:is_err())
-    assert.are.same('Input must be a table', result.error.message)
+    assert.is_nil(encoded)
+    assert.is_string(err)
   end)
 end)

@@ -1,5 +1,4 @@
 local logger = require('spm.lib.logger')
-local Result = require('spm.lib.error').Result
 
 ---@class spm.FileSourcerOptions
 ---@field recursive boolean Whether to source directories recursively (not recommended)
@@ -11,16 +10,16 @@ local Result = require('spm.lib.error').Result
 
 ---Safely sources a single Lua file
 ---@param filepath string Path to the Lua file to source
----@return spm.Result<nil>
+---@return boolean?, string?
 local function source_lua_file(filepath)
   if vim.fn.filereadable(filepath) == 0 then
-    return Result.err(string.format('File not readable: %s', filepath))
+    return nil, string.format('File not readable: %s', filepath)
   end
 
   local success, err = pcall(dofile, filepath)
-  if not success then return Result.err(string.format('Error sourcing %s: %s', filepath, err)) end
+  if not success then return nil, string.format('Error sourcing %s: %s', filepath, err) end
 
-  return Result.ok(nil)
+  return true
 end
 
 ---Gets all Lua files in a directory
@@ -39,7 +38,7 @@ end
 ---Sources all Lua files in a directory
 ---@param dirpath string Path to the directory
 ---@param options spm.FileSourcerOptions Sourcing options
----@return spm.Result<spm.SourceResult>
+---@return table?, string?
 local function source_directory(dirpath, options)
   local result = {
     success = true,
@@ -50,24 +49,24 @@ local function source_directory(dirpath, options)
   local files = get_lua_files(dirpath, options.recursive)
 
   for _, filepath in ipairs(files) do
-    local source_result = source_lua_file(filepath)
-    if source_result:is_ok() then
+    local ok, err = source_lua_file(filepath)
+    if ok then
       result.files_sourced = result.files_sourced + 1
       logger.debug(string.format('Sourced: %s', filepath), 'FileSourcer')
     else
       result.success = false
       table.insert(result.errors, {
         file = filepath,
-        error = source_result.error,
+        error = err,
       })
-      logger.error(source_result.error.message or 'Unknown error', 'FileSourcer')
+      logger.error(err or 'FileSourcer failed', 'FileSourcer')
     end
   end
 
   if result.success then
-    return Result.ok(result)
+    return result
   else
-    return Result.err(result)
+    return nil, 'Some files failed to source'
   end
 end
 

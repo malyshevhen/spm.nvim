@@ -14,17 +14,14 @@ describe('file_sourcer', function()
     file:write('return true')
     file:close()
 
-    local result = file_sourcer.source_lua_file('test/fixtures/file_sourcer/test.lua')
-    assert.is_true(result:is_ok())
+    local ok, err = file_sourcer.source_lua_file('test/fixtures/file_sourcer/test.lua')
+    assert.is_true(ok)
   end)
 
   it('should return an error if the file is not readable', function()
-    local result = file_sourcer.source_lua_file('test/fixtures/file_sourcer/non_existent.lua')
-    assert.is_true(result:is_err())
-    assert.are.same(
-      'File not readable: test/fixtures/file_sourcer/non_existent.lua',
-      result.error.message
-    )
+    local ok, err = file_sourcer.source_lua_file('test/fixtures/file_sourcer/non_existent.lua')
+    assert.is_nil(ok)
+    assert.is_string(err)
   end)
 
   it('should return an error if the file has a syntax error', function()
@@ -32,11 +29,10 @@ describe('file_sourcer', function()
     file:write('this is a syntax error')
     file:close()
 
-    local result = file_sourcer.source_lua_file('test/fixtures/file_sourcer/syntax_error.lua')
-    assert.is_true(result:is_err())
-    assert.truthy(
-      result.error.message:find('Error sourcing test/fixtures/file_sourcer/syntax_error.lua')
-    )
+    local ok, err = file_sourcer.source_lua_file('test/fixtures/file_sourcer/syntax_error.lua')
+    assert.is_nil(ok)
+    assert.is_string(err)
+    assert.truthy(err:find('Error sourcing test/fixtures/file_sourcer/syntax_error.lua'))
   end)
 
   it('should return a list of lua files in a directory', function()
@@ -79,10 +75,11 @@ describe('file_sourcer', function()
     file:write('return true')
     file:close()
 
-    local result =
+    local result, err =
       file_sourcer.source_directory('test/fixtures/file_sourcer', { recursive = false })
-    assert.is_true(result:is_ok())
-    assert.are.same(2, result:unwrap().files_sourced)
+    assert.is_nil(err)
+    assert.is_table(result)
+    assert.are.same(2, result.files_sourced)
   end)
 
   it('should return an error if any of the files have a syntax error', function()
@@ -94,8 +91,9 @@ describe('file_sourcer', function()
     file:write('this is a syntax error')
     file:close()
 
-    local result =
+    local result, err =
       file_sourcer.source_directory('test/fixtures/file_sourcer', { recursive = false })
-    assert.is_true(result:is_err())
+    assert.is_nil(result)
+    assert.is_string(err)
   end)
 end)

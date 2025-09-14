@@ -1,5 +1,4 @@
 local logger = require('spm.lib.logger')
-local Result = require('spm.lib.error').Result
 
 ---@class spm.Installer
 local installer = {}
@@ -27,40 +26,40 @@ local function to_pack_spec(plugin)
 end
 
 ---Validates that vim.pack is available
----@return spm.Result<nil>
+---@return boolean?, string?
 local function validate_vim_pack()
   if not vim.pack or type(vim.pack.add) ~= 'function' then
-    return Result.err('vim.pack is not available - requires Neovim 0.12+')
+    return nil, 'vim.pack is not available - requires Neovim 0.12+'
   end
-  return Result.ok(nil)
+  return true
 end
 
 ---Installs plugins using vim.pack.add
 ---@param plugins spm.PluginSpec[] List of plugins to install
 ---@param options spm.InstallerOptions? Installation options
----@return spm.Result<nil>
+---@return boolean?, string?
 local function install(plugins, options)
   if not plugins or #plugins == 0 then
-    return Result.ok(nil) -- Nothing to install is considered success
+    return true -- Nothing to install is considered success
   end
 
-  local validation_result = validate_vim_pack()
-  if validation_result:is_err() then
-    logger.error('vim.pack not available: ' .. validation_result.error.message, 'PackInstaller')
-    return validation_result
+  local ok, err = validate_vim_pack()
+  if not ok then
+    logger.error('vim.pack not available: ' .. err, 'PackInstaller')
+    return nil, err
   end
 
   options = vim.tbl_deep_extend('force', DEFAULT_OPTIONS, options or {})
 
   local pack_specs = vim.tbl_map(to_pack_spec, plugins)
 
-  local success, err = pcall(vim.pack.add, pack_specs, options)
+  local success, pack_err = pcall(vim.pack.add, pack_specs, options)
   if not success then
-    logger.error('vim.pack.add failed: ' .. tostring(err), 'PackInstaller')
-    return Result.err(tostring(err))
+    logger.error('vim.pack.add failed: ' .. tostring(pack_err), 'PackInstaller')
+    return nil, tostring(pack_err)
   end
 
-  return Result.ok(nil)
+  return true
 end
 
 return {

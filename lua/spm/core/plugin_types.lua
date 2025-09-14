@@ -1,5 +1,4 @@
 local logger = require('spm.lib.logger')
-local Result = require('spm.lib.error').Result
 
 ---@class spm.PluginSpec
 ---@field name string? Optional human-readable name for the plugin
@@ -10,32 +9,35 @@ local PluginSpec = {}
 PluginSpec.__index = PluginSpec
 
 ---@param user_config table? User-provided configuration
----@return spm.Result<spm.PluginSpec>
+---@return spm.PluginSpec?, string?
 function PluginSpec.create(user_config)
   if user_config and type(user_config) ~= 'table' then
-    return Result.err('Configuration must be a table')
+    return nil, 'Configuration must be a table'
   end
 
   ---@type spm.PluginSpec
   local plugin_spec = setmetatable(user_config or {}, PluginSpec)
 
   -- Final validation of resolved config
-  return plugin_spec:valid()
+  local ok, err = plugin_spec:valid()
+  if not ok then return nil, err end
+
+  return plugin_spec
 end
 
 ---Validates a single plugin specification
----@return spm.Result<spm.PluginSpec>
+---@return boolean?, string?
 function PluginSpec:valid()
-  if type(self) ~= 'table' then return Result.err('Plugin must be a table') end
+  if type(self) ~= 'table' then return false, 'Plugin must be a table' end
 
   if not self.src or type(self.src) ~= 'string' or not self.src:match('^https://') then
-    return Result.err("Plugin must have a 'src' field with a valid HTTPS URL")
+    return false, "Plugin must have a 'src' field with a valid HTTPS URL"
   end
 
-  return Result.ok(self)
+  return true
 end
 
----@alias PluginList spm.PluginSpec[]
+---@alias PluginSpecs spm.PluginSpec[]
 
 ---@class spm.LanguageServerSpec
 ---@field servers string[] List of language servers to enable
@@ -48,50 +50,58 @@ local PluginConfig = {}
 PluginConfig.__index = PluginConfig
 
 ---@param user_config table? User-provided configuration
----@return spm.Result<spm.PluginConfig>
+---@return spm.PluginConfig?, string?
 function PluginConfig.create(user_config)
   if user_config and type(user_config) ~= 'table' then
-    return Result.err('Configuration must be a table')
+    return nil, 'Configuration must be a table'
   end
 
   local config = user_config or {}
 
   if config.plugins then
-    config.plugins = vim.tbl_map(function(plugin)
+    local new_plugins = {}
+    for _, plugin in ipairs(config.plugins) do
       if type(plugin) == 'table' then
-        local plugin_spec_result = PluginSpec.create(plugin)
-        if plugin_spec_result:is_ok() then return plugin_spec_result:unwrap() end
-
-        logger.error(plugin_spec_result.error.message, 'PluginTypes')
+        local plugin_spec, err = PluginSpec.create(plugin)
+        if plugin_spec then
+          table.insert(new_plugins, plugin_spec)
+        else
+          logger.error(err or 'PluginSpec.create failed', 'PluginTypes')
+        end
       end
-    end, config.plugins)
+    end
+    config.plugins = new_plugins
   end
 
   ---@type spm.PluginConfig
   local plugin_config = setmetatable(config, PluginConfig)
 
   -- Final validation of resolved config
-  return plugin_config:valid()
+  local ok, err = plugin_config:valid()
+  if not ok then return nil, err end
+
+  return plugin_config
 end
 
 ---Validates a complete plugin configuration
----@return spm.Result<spm.PluginConfig>
+---@return boolean?, string?
 function PluginConfig:valid()
-  if type(self) ~= 'table' then return Result.err('Config must be a table') end
+  if type(self) ~= 'table' then return false, 'Config must be a table' end
 
   if not self.plugins or type(self.plugins) ~= 'table' then
-    return Result.err("Config must have a 'plugins' field of type array")
+    return false, "Config must have a 'plugins' field of type array"
   end
 
   for i, plugin in ipairs(self.plugins) do
-    setmetatable(plugin, PluginSpec)
-    local validation_result = plugin:valid()
-    if validation_result:is_err() then
-      return Result.err(string.format('Plugin at index %d: %s', i, validation_result.error.message))
+    if not plugin.valid then
+      return false, string.format('Plugin at index %d: invalid plugin', i)
     end
+
+    local ok, err = plugin:valid()
+    if not ok then return false, string.format('Plugin at index %d: %s', i, err) end
   end
 
-  return Result.ok(self)
+  return true
 end
 
 ---Extracts the repository name from a Git URL

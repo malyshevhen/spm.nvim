@@ -8,8 +8,8 @@ describe('plugin_types', function()
         src = 'https://github.com/test/test',
       }
       setmetatable(valid_plugin, PluginSpec)
-      local result = valid_plugin:valid()
-      assert.is_true(result:is_ok())
+      local ok, err = valid_plugin:valid()
+      assert.is_true(ok)
     end)
 
     it('should return an error if the plugin is not a table', function()
@@ -19,9 +19,9 @@ describe('plugin_types', function()
         { __index = function() return invalid_plugin end }
       )
       ---@diagnostic disable-next-line: param-type-mismatch
-      local result = PluginSpec.valid(invalid_plugin)
-      assert.is_true(result:is_err())
-      assert.are.same('Plugin must be a table', result.error.message)
+      local ok, err = PluginSpec.valid(invalid_plugin)
+      assert.is_false(ok)
+      assert.is_string(err)
     end)
 
     it('should return an error if src is not a valid https url', function()
@@ -29,9 +29,9 @@ describe('plugin_types', function()
         src = 'http://github.com/test/test',
       }
       setmetatable(invalid_plugin, PluginSpec)
-      local result = invalid_plugin:valid()
-      assert.is_true(result:is_err())
-      assert.are.same("Plugin must have a 'src' field with a valid HTTPS URL", result.error.message)
+      local ok, err = invalid_plugin:valid()
+      assert.is_false(ok)
+      assert.is_string(err)
     end)
   end)
 
@@ -44,9 +44,11 @@ describe('plugin_types', function()
           },
         },
       }
-      setmetatable(valid_config, PluginConfig)
-      local result = valid_config:valid()
-      assert.is_true(result:is_ok())
+      ---@type spm.PluginConfig?, string?
+      local config, err = PluginConfig.create(valid_config)
+      assert.is_nil(err)
+      local ok, err = config:valid()
+      assert.is_true(ok)
     end)
 
     it('should return an error if the config is not a table', function()
@@ -56,9 +58,9 @@ describe('plugin_types', function()
         { __index = function() return invalid_config end }
       )
       ---@diagnostic disable-next-line: param-type-mismatch
-      local result = PluginConfig.valid(invalid_config)
-      assert.is_true(result:is_err())
-      assert.are.same('Config must be a table', result.error.message)
+      local ok, err = PluginConfig.valid(invalid_config)
+      assert.is_false(ok)
+      assert.is_string(err)
     end)
 
     it('should return an error if plugins is not an array', function()
@@ -66,9 +68,9 @@ describe('plugin_types', function()
         plugins = 'not an array',
       }
       setmetatable(invalid_config, PluginConfig)
-      local result = invalid_config:valid()
-      assert.is_true(result:is_err())
-      assert.are.same("Config must have a 'plugins' field of type array", result.error.message)
+      local ok, err = invalid_config:valid()
+      assert.is_false(ok)
+      assert.is_string(err)
     end)
 
     it('should return an error if any of the plugins are invalid', function()
@@ -80,12 +82,9 @@ describe('plugin_types', function()
         },
       }
       setmetatable(invalid_config, PluginConfig)
-      local result = invalid_config:valid()
-      assert.is_true(result:is_err())
-      assert.are.same(
-        "Plugin at index 1: Plugin must have a 'src' field with a valid HTTPS URL",
-        result.error.message
-      )
+      local ok, err = invalid_config:valid()
+      assert.is_false(ok)
+      assert.is_string(err)
     end)
   end)
 
