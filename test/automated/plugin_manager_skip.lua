@@ -64,7 +64,7 @@ src = "https://github.com/test/plugin"
       local raw_config = result:unwrap()
       local config = create_plugin_config(raw_config)
       assert.is_function(config.validate)
-      local validation_result = config:validate()
+      local validation_result = config:valid()
       assert.is_true(validation_result:is_ok())
     end)
 
@@ -272,7 +272,7 @@ src = "not-a-valid-url"
         if parse_result:is_ok() then
           local raw_config = parse_result:unwrap()
           local config = create_plugin_config(raw_config)
-          local validation_result = config:validate()
+          local validation_result = config:valid()
           assert.is_true(validation_result:is_err())
         end
       else

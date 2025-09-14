@@ -1,4 +1,4 @@
-local Validator = require('spm.core.validator')
+local Validatable = require('spm.core.validation').Validatable
 
 --- A custom validator that checks if a path points to a readable file.
 ---@param path string The file path to check.
@@ -11,7 +11,7 @@ local function isFileReadable(path)
   end
 end
 
----@class spm.Config : spm.Valid
+---@class spm.Config : spm.Validatable
 ---@field plugins_toml_path string? Path to plugins.toml file (nil will default to config_root/plugins.toml)
 ---@field lock_file_path string? Path to the lock file
 ---@field auto_source_configs boolean? Whether to automatically source config files
@@ -20,6 +20,7 @@ end
 ---@field debug_mode boolean? Enable debug logging
 local Config = {}
 Config.__index = Config
+setmetatable(Config, { __index = Validatable })
 
 ---@type spm.Schema.Definition
 Config.schema = {
@@ -41,10 +42,6 @@ local DEFAULT_CONFIG = {
   show_startup_messages = false,
   debug_mode = false,
 }
-
---- Validates the configuration
----@return boolean, string?
-function Config:valid() return Validator.validate(self) end
 
 --- Creates a new configuration by merging user config with defaults
 ---@param user_config table? User-provided configuration

@@ -1,13 +1,14 @@
+local Validatable = require('spm.core.validation').Validatable
 local logger = require('spm.lib.logger')
-local Validator = require('spm.core.validator')
 
----@class spm.PluginSpec: spm.Valid
+---@class spm.PluginSpec: spm.Validatable
 ---@field name string? Optional human-readable name for the plugin
 ---@field src string Full URL to the plugin repository (required)
 ---@field version string? Version or branch to install (defaults to master if not specified)
 ---@field dependencies string[]? List of dependency plugin URLs
 local PluginSpec = {}
 PluginSpec.__index = PluginSpec
+setmetatable(PluginSpec, { __index = Validatable })
 
 ---@type spm.Schema.Definition
 PluginSpec.schema = {
@@ -20,24 +21,14 @@ PluginSpec.schema = {
 ---@param user_config table? User-provided configuration
 ---@return spm.PluginSpec?, string?
 function PluginSpec.create(user_config)
-  if user_config and type(user_config) ~= 'table' then
-    return nil, 'Configuration must be a table'
-  end
-
-  ---@type spm.PluginSpec
-  local plugin_spec = setmetatable(user_config or {}, PluginSpec)
+  user_config = user_config or {}
+  setmetatable(user_config, PluginSpec)
 
   -- Final validation of resolved config
-  local ok, err = plugin_spec:valid()
+  local ok, err = user_config:valid()
   if not ok then return nil, err end
 
-  return plugin_spec
-end
-
----Validates a single plugin specification
----@return boolean, string?
-function PluginSpec:valid()
-  return Validator.validate(self)
+  return user_config
 end
 
 ---@alias PluginSpecs spm.PluginSpec[]
@@ -45,12 +36,13 @@ end
 ---@class spm.LanguageServerSpec
 ---@field servers string[] List of language servers to enable
 
----@class spm.PluginConfig: spm.Valid
+---@class spm.PluginConfig: spm.Validatable
 ---@field plugins spm.PluginSpec[] Array of plugin configurations
 ---@field language_servers spm.LanguageServerSpec? Configuration for language servers
 ---@field filetypes table? Configuration for filetype mappings
 local PluginConfig = {}
 PluginConfig.__index = PluginConfig
+setmetatable(PluginConfig, { __index = Validatable })
 
 ---@type spm.Schema.Definition
 PluginConfig.schema = {
@@ -83,20 +75,13 @@ function PluginConfig.create(user_config)
     config.plugins = new_plugins
   end
 
-  ---@type spm.PluginConfig
-  local plugin_config = setmetatable(config, PluginConfig)
+  setmetatable(config, PluginConfig)
 
   -- Final validation of resolved config
-  local ok, err = plugin_config:valid()
+  local ok, err = config:valid()
   if not ok then return nil, err end
 
-  return plugin_config
-end
-
----Validates a complete plugin configuration
----@return boolean, string?
-function PluginConfig:valid()
-  return Validator.validate(self)
+  return config
 end
 
 ---Extracts the repository name from a Git URL

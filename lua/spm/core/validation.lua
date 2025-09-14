@@ -11,7 +11,7 @@
 
 --- Defines the validation rules for a single field.
 ---@class spm.Schema.Constraint
----@field type spm.Schema.LuaType The expected Lua type of the field (e.g., 'string', 'boolean', 'table').
+---@field type spm.Schema.LuaType | spm.Schema.LuaType[] The expected Lua type of the field (e.g., 'string', 'boolean', 'table').
 ---@field optional boolean? If true, the field does not need to be present. Defaults to false.
 ---@field regex string? An optional regex pattern that the field's value must match. (Only applies to strings)
 ---@field enum any[]? An optional list of allowed values for the field.
@@ -75,35 +75,59 @@ _validate = function(target, visited)
         return false, string.format("Missing required field: '%s'", field_name)
       end
     else
-      -- 1. Type Check
-      if type(value) ~= constraints.type then
+      -- 1. Type Check (Now with multi-type support)
+      local constraints_type = constraints.type
+      local value_type = type(value)
+      local type_is_valid = false
+
+      if type(constraints_type) == 'string' then
+        -- Case 1: A single type is specified
+        if value_type == constraints_type then type_is_valid = true end
+      elseif type(constraints_type) == 'table' then
+        -- Case 2: A list of allowed types is specified
+        for _, allowed_type in ipairs(constraints_type) do
+          if value_type == allowed_type then
+            type_is_valid = true
+            break -- Found a match, no need to check further
+          end
+        end
+      end
+
+      if not type_is_valid then
+        -- Create a user-friendly error message for both cases
+        local expected_type_str
+        if type(constraints_type) == 'string' then
+          expected_type_str = "'" .. constraints_type .. "'"
+        else
+          expected_type_str = "one of ['" .. table.concat(constraints_type, "', '") .. "']"
+        end
         return false,
-            string.format(
-              "Field '%s' must be of type '%s', but received type '%s'",
-              field_name,
-              constraints.type,
-              type(value)
-            )
+          string.format(
+            "Field '%s' must be of type %s, but received type '%s'",
+            field_name,
+            expected_type_str,
+            value_type
+          )
       end
       -- 2. Regex Check (only for string values)
       if constraints.regex and type(value) == 'string' then
         local success, matched = pcall(string.match, value, constraints.regex)
         if not success then
           return false,
-              string.format(
-                "Field '%s' has an invalid regex pattern in its schema: %s",
-                field_name,
-                tostring(matched)
-              )
+            string.format(
+              "Field '%s' has an invalid regex pattern in its schema: %s",
+              field_name,
+              tostring(matched)
+            )
         end
         if not matched then
           return false,
-              string.format(
-                "Field '%s' with value '%s' does not match the required regex pattern: '%s'",
-                field_name,
-                value,
-                constraints.regex
-              )
+            string.format(
+              "Field '%s' with value '%s' does not match the required regex pattern: '%s'",
+              field_name,
+              value,
+              constraints.regex
+            )
         end
       end
       -- 3. Enum Check (for any value type)
@@ -117,12 +141,12 @@ _validate = function(target, visited)
         end
         if not found then
           return false,
-              string.format(
-                "Field '%s' has an invalid value '%s'. It must be one of [%s]",
-                field_name,
-                tostring(value),
-                table.concat(constraints.enum, ', ')
-              )
+            string.format(
+              "Field '%s' has an invalid value '%s'. It must be one of [%s]",
+              field_name,
+              tostring(value),
+              table.concat(constraints.enum, ', ')
+            )
         end
       end
       -- 4. Custom Validation Function
@@ -130,11 +154,11 @@ _validate = function(target, visited)
         local is_ok, err_msg = constraints.custom(value, target)
         if not is_ok then
           return false,
-              string.format(
-                "Field '%s' failed custom validation: %s",
-                field_name,
-                err_msg or 'invalid value'
-              )
+            string.format(
+              "Field '%s' failed custom validation: %s",
+              field_name,
+              err_msg or 'invalid value'
+            )
         end
       end
       -- 5. Recursive Validation Logic
@@ -147,12 +171,12 @@ _validate = function(target, visited)
               local ok, err = _validate(item, visited)
               if not ok then
                 return false,
-                    string.format(
-                      "Validation failed for field '%s' at index %d: %s",
-                      field_name,
-                      i,
-                      err
-                    )
+                  string.format(
+                    "Validation failed for field '%s' at index %d: %s",
+                    field_name,
+                    i,
+                    err
+                  )
               end
             end
           end
@@ -161,7 +185,7 @@ _validate = function(target, visited)
           local ok, err = _validate(value, visited)
           if not ok then
             return false,
-                string.format("Validation failed for nested field '%s': %s", field_name, err)
+              string.format("Validation failed for nested field '%s': %s", field_name, err)
           end
         end
       end
@@ -171,4 +195,20 @@ _validate = function(target, visited)
   return true, nil
 end
 
-return Validator
+--- A mixin/trait that provides validation capabilities to any class.
+--- A class that uses this mixin is expected to implement the `spm.Valid` interface
+---@class spm.Validatable: spm.Valid
+local Validatable = {}
+
+--- Validates the instance against its own schema.
+--- This method is intended to be called on an instance of a class that uses this mixin.
+---@return boolean?, string? The instance itself if valid, otherwise nil and an error message.
+function Validatable:valid()
+  -- We assume 'self' will be an instance of a data class like Config or User.
+  return Validator.validate(self)
+end
+
+return {
+  Validatable = Validatable,
+  Validator = Validator,
+}

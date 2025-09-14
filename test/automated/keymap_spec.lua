@@ -8,21 +8,17 @@ describe('keymap', function()
         cmd = function() print('test') end,
       }
       setmetatable(valid_keymap, keymap.KeymapSpec)
-      local valid, err = valid_keymap:validate()
-      assert.is_true(valid)
+      local valid, err = valid_keymap:valid()
       assert.is_nil(err)
+      assert.is_true(valid)
     end)
 
     it('should return an error if the keymap is not a table', function()
       local invalid_keymap = 'not a table'
-      setmetatable(
-        { validate = keymap.KeymapSpec.validate },
-        { __index = function() return invalid_keymap end }
-      )
       ---@diagnostic disable-next-line: param-type-mismatch
-      local valid, err = keymap.KeymapSpec.validate(invalid_keymap)
+      local valid, err = keymap.KeymapSpec.valid(invalid_keymap)
       assert.is_false(valid)
-      assert.are.same('Keymap must be a table', err)
+      assert.are.same('Target for validation must be a table.', err)
     end)
 
     it('should return an error if map is not a string', function()
@@ -30,9 +26,9 @@ describe('keymap', function()
         cmd = function() print('test') end,
       }
       setmetatable(invalid_keymap, keymap.KeymapSpec)
-      local valid, err = invalid_keymap:validate()
+      local valid, err = invalid_keymap:valid()
       assert.is_false(valid)
-      assert.are.same("Keymap must have a 'map' field of type string", err)
+      assert.are.same("Missing required field: 'map'", err)
     end)
 
     it('should return an error if cmd is not a string or function', function()
@@ -40,9 +36,9 @@ describe('keymap', function()
         map = '<leader>t',
       }
       setmetatable(invalid_keymap, keymap.KeymapSpec)
-      local valid, err = invalid_keymap:validate()
+      local valid, err = invalid_keymap:valid()
       assert.is_false(valid)
-      assert.are.same("Keymap must have a 'cmd' field of type string or function", err)
+      assert.are.same("Missing required field: 'cmd'", err)
     end)
   end)
 
