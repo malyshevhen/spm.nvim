@@ -10,17 +10,11 @@ local encoder = {}
 ---@param t table The table to check.
 ---@return boolean True if the table is an array, false otherwise.
 local function is_array(t)
-  if type(t) ~= 'table' then
-    return false
-  end
+  if type(t) ~= 'table' then return false end
   local max_index, count = 0, 0
   for k, _ in pairs(t) do
-    if type(k) ~= 'number' or k < 1 or k % 1 ~= 0 then
-      return false
-    end
-    if k > max_index then
-      max_index = k
-    end
+    if type(k) ~= 'number' or k < 1 or k % 1 ~= 0 then return false end
+    if k > max_index then max_index = k end
     count = count + 1
   end
   return max_index == count
@@ -176,9 +170,7 @@ end
 ---@param data any The Lua table to encode.
 ---@return string?, string? An encoded TOML string, or nil and an error message.
 function encoder.encode(data)
-  if type(data) ~= 'table' then
-    return nil, 'Input must be a table.'
-  end
+  if type(data) ~= 'table' then return nil, 'Input must be a table.' end
   local ok, lines = pcall(process_table, data, {})
   if not ok then
     return nil, lines -- 'lines' will contain the error message from pcall.

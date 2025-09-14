@@ -80,9 +80,7 @@ function Result.ok(result) return Result.new(true, result, nil) end
 ---@param error spm.Error|string
 ---@return spm.Result<T>
 function Result.err(error)
-  if type(error) == 'string' then
-    error = { message = error }
-  end
+  if type(error) == 'string' then error = { message = error } end
   return Result.new(false, nil, error)
 end
 
@@ -121,9 +119,7 @@ function Result:unwrap_err() return self.error end
 ---@param fn fun(value: T): U
 ---@return spm.Result<U>
 function Result:map(fn)
-  if not self.success then
-    return Result.err(self.error)
-  end
+  if not self.success then return Result.err(self.error) end
 
   local ok, mapped_result = pcall(fn, self.result)
   if not ok then
@@ -138,9 +134,7 @@ end
 ---@param fn fun(error: string): T
 ---@return spm.Result<T>
 function Result:map_err(fn)
-  if self.success then
-    return Result.ok(self.result)
-  end
+  if self.success then return Result.ok(self.result) end
   local ok, mapped_error = pcall(fn, self.error.message)
   if not ok then
     return Result.err({ message = 'Map_err function failed: ' .. tostring(mapped_error) })
@@ -154,9 +148,7 @@ end
 ---@param fn fun(value: T): spm.Result<U>
 ---@return spm.Result<U>
 function Result:flat_map(fn)
-  if not self.success then
-    return Result.err(self.error)
-  end
+  if not self.success then return Result.err(self.error) end
 
   local ok, next_result = pcall(fn, self.result)
   if not ok then
@@ -176,9 +168,7 @@ end
 ---@param fn fun(): T
 ---@return spm.Result<T>
 function Result:or_else(fn)
-  if self.success then
-    return self
-  end
+  if self.success then return self end
 
   local ok, recovery_result = pcall(fn)
   if not ok then
@@ -194,9 +184,7 @@ end
 ---@return spm.Result<T>
 function Result.try(fn)
   local ok, result = pcall(fn)
-  if not ok then
-    return Result.err({ message = tostring(result) })
-  end
+  if not ok then return Result.err({ message = tostring(result) }) end
 
   return Result.ok(result)
 end

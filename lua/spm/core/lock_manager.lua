@@ -15,9 +15,7 @@ local function read(lock_file_path)
   end
 
   local content_result = fs.read_file(lock_file_path)
-  if content_result:is_err() then
-    return content_result
-  end
+  if content_result:is_err() then return content_result end
 
   local content = content_result:unwrap()
   if content == '' then

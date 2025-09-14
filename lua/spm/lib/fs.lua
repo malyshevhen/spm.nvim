@@ -13,8 +13,8 @@
 --- - `rmdir`: Removes a directory
 
 local Result = require('spm.lib.error').Result
-local logger = require('spm.lib.logger')
 local Path = require('plenary.path')
+local logger = require('spm.lib.logger')
 
 ---@class spm.fs
 local fs = {}
@@ -23,14 +23,10 @@ local fs = {}
 ---@return spm.Result<nil>
 function fs.delete_file(path)
   logger.debug(string.format('Deleting file: %s', path), 'fs')
-  if not path or type(path) ~= 'string' then
-    return Result.err('Invalid path')
-  end
+  if not path or type(path) ~= 'string' then return Result.err('Invalid path') end
 
   local p = Path:new(path)
-  if not p:exists() then
-    return Result.err('File does not exist')
-  end
+  if not p:exists() then return Result.err('File does not exist') end
 
   local success, err = pcall(function() return p:rm() end)
   if success then
@@ -44,15 +40,11 @@ end
 ---@return spm.Result<nil>
 function fs.mkdir(path)
   logger.debug(string.format('Creating directory: %s', path), 'fs')
-  if not path or type(path) ~= 'string' then
-    return Result.err('Invalid path')
-  end
+  if not path or type(path) ~= 'string' then return Result.err('Invalid path') end
 
   local success, err = pcall(function()
     local ok, uv_err = vim.uv.fs_mkdir(path, 448)
-    if not ok then
-      error(uv_err)
-    end
+    if not ok then error(uv_err) end
   end)
   if success then
     return Result.ok(nil)
@@ -65,15 +57,11 @@ end
 ---@return spm.Result<nil>
 function fs.rmdir(path)
   logger.debug(string.format('Removing directory: %s', path), 'fs')
-  if not path or type(path) ~= 'string' then
-    return Result.err('Invalid path')
-  end
+  if not path or type(path) ~= 'string' then return Result.err('Invalid path') end
 
   local success, err = pcall(function()
     local ok, uv_err = vim.uv.fs_rmdir(path)
-    if not ok then
-      error(uv_err)
-    end
+    if not ok then error(uv_err) end
   end)
   if success then
     return Result.ok(nil)
@@ -87,13 +75,9 @@ end
 ---@return spm.Result<nil>
 function fs.write_file(path, content)
   logger.debug(string.format('Writing to file: %s', path), 'fs')
-  if not path or type(path) ~= 'string' then
-    return Result.err('Invalid path')
-  end
+  if not path or type(path) ~= 'string' then return Result.err('Invalid path') end
 
-  if not content or type(content) ~= 'string' then
-    return Result.err('Invalid content')
-  end
+  if not content or type(content) ~= 'string' then return Result.err('Invalid content') end
 
   local p = Path:new(path)
   local success, err = pcall(function() return p:write(content, 'w') end)
@@ -108,14 +92,10 @@ end
 ---@return spm.Result<string>
 function fs.read_file(path)
   logger.debug(string.format('Reading file: %s', path), 'fs')
-  if not path or type(path) ~= 'string' then
-    return Result.err('Invalid path')
-  end
+  if not path or type(path) ~= 'string' then return Result.err('Invalid path') end
 
   local p = Path:new(path)
-  if not p:exists() then
-    return Result.err('File does not exist')
-  end
+  if not p:exists() then return Result.err('File does not exist') end
 
   local success, content = pcall(function() return p:read() end)
   if success then

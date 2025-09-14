@@ -12,9 +12,7 @@ KeymapSpec.__index = KeymapSpec
 ---@return boolean valid True if the keymap is valid
 ---@return string? error_msg Error message if validation fails
 function KeymapSpec:validate()
-  if type(self) ~= 'table' then
-    return false, 'Keymap must be a table'
-  end
+  if type(self) ~= 'table' then return false, 'Keymap must be a table' end
 
   if not self.map or type(self.map) ~= 'string' then
     return false, "Keymap must have a 'map' field of type string"
@@ -43,9 +41,7 @@ function KeymapSpec:set_single_keymap()
 
   -- Build options table
   local opts = self.opts or {}
-  if self.desc then
-    opts.desc = self.desc
-  end
+  if self.desc then opts.desc = self.desc end
 
   -- Handle filetype-specific keymaps
   if self.ft then
@@ -75,18 +71,14 @@ end
 ---@return number success_count Number of successfully set keymaps
 ---@return number total_count Total number of keymaps attempted
 local function map(keymaps)
-  if not keymaps then
-    return 0, 0
-  end
+  if not keymaps then return 0, 0 end
 
   local keymap_list = type(keymaps) == 'table' and keymaps.map and { keymaps } or keymaps
 
   local success_count = 0
   for _, keymap in ipairs(keymap_list) do
     setmetatable(keymap, KeymapSpec)
-    if keymap:set_single_keymap() then
-      success_count = success_count + 1
-    end
+    if keymap:set_single_keymap() then success_count = success_count + 1 end
   end
 
   return success_count, #keymap_list

@@ -23,24 +23,18 @@ describe('spm.init', function()
   after_each(function()
     -- Clean up files
     for _, path_obj in ipairs(test_env.files_to_clean) do
-      if path_obj:exists() then
-        path_obj:rm()
-      end
+      if path_obj:exists() then path_obj:rm() end
     end
 
     -- Clean up temp directory
-    if test_env.temp_dir and test_env.temp_dir:exists() then
-      test_env.temp_dir:rmdir()
-    end
+    if test_env.temp_dir and test_env.temp_dir:exists() then test_env.temp_dir:rmdir() end
 
     test_env = {}
   end)
 
   local function create_temp_file(content)
     local temp_file = test_env.temp_dir / ('test_' .. #test_env.files_to_clean .. '.toml')
-    if content then
-      temp_file:write(content, 'w')
-    end
+    if content then temp_file:write(content, 'w') end
     table.insert(test_env.files_to_clean, temp_file)
     return temp_file.filename
   end

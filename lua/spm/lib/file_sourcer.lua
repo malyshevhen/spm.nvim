@@ -18,9 +18,7 @@ local function source_lua_file(filepath)
   end
 
   local success, err = pcall(dofile, filepath)
-  if not success then
-    return Result.err(string.format('Error sourcing %s: %s', filepath, err))
-  end
+  if not success then return Result.err(string.format('Error sourcing %s: %s', filepath, err)) end
 
   return Result.ok(nil)
 end
@@ -30,9 +28,7 @@ end
 ---@param recursive boolean Whether to search recursively
 ---@return string[] filepaths List of Lua file paths found
 local function get_lua_files(dirpath, recursive)
-  if vim.fn.isdirectory(dirpath) == 0 then
-    return {}
-  end
+  if vim.fn.isdirectory(dirpath) == 0 then return {} end
 
   local pattern = recursive and '**/*.lua' or '*.lua'
   local glob_pattern = dirpath .. '/' .. pattern

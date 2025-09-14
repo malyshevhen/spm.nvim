@@ -17,9 +17,7 @@ describe('plugin_manager integration', function()
 
   local function create_temp_file(content)
     local temp_file = Path:new(vim.fn.tempname())
-    if content then
-      temp_file:write(content, 'w')
-    end
+    if content then temp_file:write(content, 'w') end
     table.insert(files_to_clean, temp_file)
     return temp_file.filename
   end
@@ -27,9 +25,7 @@ describe('plugin_manager integration', function()
   after_each(function()
     for _, file in ipairs(files_to_clean) do
       local success, err = pcall(function() file:rm() end)
-      if not success then
-        print('Failed to clean up file: ' .. tostring(err))
-      end
+      if not success then print('Failed to clean up file: ' .. tostring(err)) end
     end
     files_to_clean = {}
   end)
@@ -175,9 +171,7 @@ src = "https://github.com/test/plugin"
       -- 4. Generate hash of original content
       local content_result = Result.try(function()
         local file = io.open(test_plugins_toml_path, 'r')
-        if not file then
-          error('Cannot open file')
-        end
+        if not file then error('Cannot open file') end
 
         local content = file:read('*a')
         file:close()

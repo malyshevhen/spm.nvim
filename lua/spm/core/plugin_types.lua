@@ -26,9 +26,7 @@ end
 ---Validates a single plugin specification
 ---@return spm.Result<spm.PluginSpec>
 function PluginSpec:valid()
-  if type(self) ~= 'table' then
-    return Result.err('Plugin must be a table')
-  end
+  if type(self) ~= 'table' then return Result.err('Plugin must be a table') end
 
   if not self.src or type(self.src) ~= 'string' or not self.src:match('^https://') then
     return Result.err("Plugin must have a 'src' field with a valid HTTPS URL")
@@ -62,9 +60,7 @@ function PluginConfig.create(user_config)
     config.plugins = vim.tbl_map(function(plugin)
       if type(plugin) == 'table' then
         local plugin_spec_result = PluginSpec.create(plugin)
-        if plugin_spec_result:is_ok() then
-          return plugin_spec_result:unwrap()
-        end
+        if plugin_spec_result:is_ok() then return plugin_spec_result:unwrap() end
 
         logger.error(plugin_spec_result.error.message, 'PluginTypes')
       end
@@ -81,9 +77,7 @@ end
 ---Validates a complete plugin configuration
 ---@return spm.Result<spm.PluginConfig>
 function PluginConfig:valid()
-  if type(self) ~= 'table' then
-    return Result.err('Config must be a table')
-  end
+  if type(self) ~= 'table' then return Result.err('Config must be a table') end
 
   if not self.plugins or type(self.plugins) ~= 'table' then
     return Result.err("Config must have a 'plugins' field of type array")

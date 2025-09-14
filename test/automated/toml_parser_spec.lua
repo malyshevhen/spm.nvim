@@ -1,14 +1,14 @@
 local toml_parser = require('spm.lib.toml_parser')
 
 describe('toml_parser', function()
-   -- Skipping parsing tests to focus on encoding
-   -- it('should parse a valid toml file', function()
-   --   ...
-   -- end)
+  -- Skipping parsing tests to focus on encoding
+  -- it('should parse a valid toml file', function()
+  --   ...
+  -- end)
 
-   -- it('should return an error if the file is not a valid toml file', function()
-   --   ...
-   -- end)
+  -- it('should return an error if the file is not a valid toml file', function()
+  --   ...
+  -- end)
 
   it('should encode a lua table to a toml string', function()
     local tbl = {

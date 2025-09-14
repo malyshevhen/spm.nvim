@@ -51,9 +51,7 @@ local function format_message(level, message, context)
 
   local parts = { config.prefix }
 
-  if context then
-    table.insert(parts, string.format('[%s]', context))
-  end
+  if context then table.insert(parts, string.format('[%s]', context)) end
 
   table.insert(parts, string.format('[%s]', level_names[level]))
   table.insert(parts, message)
@@ -66,16 +64,12 @@ end
 ---@param message string The message to log
 ---@param context string? Optional context information
 local function log(level, message, context)
-  if not config.enabled or level < config.level then
-    return
-  end
+  if not config.enabled or level < config.level then return end
 
   local formatted = format_message(level, message, context)
   table.insert(log_history, formatted)
 
-  if not config.show_notifications then
-    return
-  end
+  if not config.show_notifications then return end
 
   local vim_level = VIM_LOG_LEVELS[level]
   vim.notify(formatted, vim_level)
@@ -84,9 +78,7 @@ end
 ---Configures the logger
 ---@param user_config table? Logger configuration
 function Logger.configure(user_config)
-  if user_config then
-    config = vim.tbl_deep_extend('force', config, user_config)
-  end
+  if user_config then config = vim.tbl_deep_extend('force', config, user_config) end
 end
 
 ---Enables debug logging
