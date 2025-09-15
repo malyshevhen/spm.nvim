@@ -21,7 +21,7 @@ function spm.setup(user_config)
   if cfg.debug_mode then logger.info('Debug mode enabled', 'SimplePM') end
 
   logger.debug('Initialize config', 'SimplePM')
-  local valid_cfg, cfg_err = spm.config_module.create(cfg)
+  local valid_cfg, cfg_err = spm.config_module:create(cfg)
   if cfg_err or not valid_cfg then error(cfg_err or 'Configuration failed to validate') end
 
   logger.debug('Setup SimplePM', 'SimplePM')

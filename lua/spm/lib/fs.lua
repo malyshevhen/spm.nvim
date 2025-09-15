@@ -11,6 +11,8 @@
 --- - `delete_file`: Deletes a file
 --- - `mkdir`: Creates a directory
 --- - `rmdir`: Removes a directory
+---
+--- TODO: move to async `vim.loop` flow
 ---@module 'spm.lib.fs'
 local fs = {}
 

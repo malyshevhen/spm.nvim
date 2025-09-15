@@ -144,6 +144,59 @@ Code is formatted with Stylua. Run:
 stylua lua/
 ```
 
+## Roadmap
+
+### Phase 1: Core Stability (v0.2.0)
+
+- [ ] **TOML Parser Fixes**
+  - [ ] Fix multiline basic strings and leading newline trimming
+  - [ ] Implement proper string escaping sequences
+  - [ ] Add CRLF line ending support
+  - [ ] Fix whitespace handling in table structures
+  - [ ] Support quoted keys and special characters in keys
+  - [ ] Handle nested table arrays correctly
+
+- [ ] **Error Handling Improvements**
+  - [ ] Better malformed TOML file handling
+  - [ ] Enhanced plugin specification validation
+  - [ ] Improved error messages and debugging
+
+### Phase 2: Performance & Reliability (v0.3.0)
+
+- [ ] **Async Operations**
+  - [ ] Move file system operations to async `vim.loop` flow
+  - [ ] Implement proper SHA256 hashing function
+  - [ ] Optimize plugin installation process
+
+- [ ] **Code Quality**
+  - [ ] Refactor large functions into smaller, testable units
+  - [ ] Improve validation function structure
+  - [ ] Clean up temporary lock file workarounds
+
+### Phase 3: User Experience (v0.4.0)
+
+- [ ] **User Commands**
+  - [ ] Add commands for plugin management (`:SPMList`, `:SPMUpdate`, etc.)
+  - [ ] Implement debugging commands
+  - [ ] Add status reporting functionality
+
+- [ ] **Configuration Enhancements**
+  - [ ] Support for plugin groups/categories
+  - [ ] Conditional plugin loading
+  - [ ] Better configuration validation feedback
+
+### Phase 4: Advanced Features (v0.5.0)
+
+- [ ] **Plugin Ecosystem**
+  - [ ] Plugin dependency conflict resolution
+  - [ ] Plugin health checks and cleanup
+  - [ ] Support for plugin update channels
+
+- [ ] **Integration Features**
+  - [ ] Better LSP server management
+  - [ ] Enhanced filetype detection
+  - [ ] Integration with external package managers
+
 ## Known Issues
 
 ### TOML Parser Limitations

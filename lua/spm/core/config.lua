@@ -46,7 +46,7 @@ local DEFAULT_CONFIG = {
 --- Creates a new configuration by merging user config with defaults
 ---@param user_config table? User-provided configuration
 ---@return spm.Config?, string?
-function Config.create(user_config)
+function Config:create(user_config)
   if user_config and type(user_config) ~= 'table' then
     return nil, 'Configuration must be a table'
   end
@@ -54,7 +54,7 @@ function Config.create(user_config)
   local config = vim.tbl_deep_extend('force', vim.deepcopy(DEFAULT_CONFIG), user_config or {})
 
   ---@type spm.Config
-  config = setmetatable(config, Config)
+  setmetatable(config, self)
 
   -- Final validation of resolved config
   local ok, err = config:valid()

@@ -248,6 +248,7 @@ end
 -- Main Parser
 -- =============================================
 
+-- TODO: refactor this (split into smaller functions)
 --- Parses a TOML-formatted string into a Lua table.
 ---@param toml_string string TOML-formatted string to parse
 ---@return table parsed_toml Parsed TOML content

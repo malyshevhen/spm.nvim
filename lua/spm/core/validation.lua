@@ -48,6 +48,7 @@ function Validator.validate(target)
   return _validate(target, visited)
 end
 
+-- TODO: refactor this (split into smaller functions)
 --- Internal recursive validation function.
 ---@param target spm.Valid The object to validate.
 ---@param visited table A set-like table tracking objects already validated in this call stack.

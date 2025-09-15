@@ -81,6 +81,7 @@ end
 -- Core Traversal and Encoding Logic
 --=============================================================================
 
+-- TODO: refactor this (split into smaller functions)
 --- Recursively processes a table to generate TOML sections and key-value pairs.
 ---@param tbl table The table to process.
 ---@param path_parts string[] A list of keys representing the path to the current table.

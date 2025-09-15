@@ -1,0 +1,1 @@
+-- TODO: add user commands for plugin management and debugging
