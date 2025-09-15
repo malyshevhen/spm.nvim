@@ -144,6 +144,33 @@ Code is formatted with Stylua. Run:
 stylua lua/
 ```
 
+## Known Issues
+
+### TOML Parser Limitations
+
+The built-in TOML parser has some known limitations that may affect certain TOML features:
+
+- **Multiline strings**: Basic multiline strings with leading newline trimming not fully supported
+- **String escaping**: Some escape sequences in strings may not be handled correctly
+- **CRLF line endings**: Support for Windows-style line endings is incomplete
+- **Complex table structures**: Some edge cases with nested tables and quoted keys
+- **Special characters in keys**: Certain special characters in table keys may cause parsing issues
+
+### Test Coverage Gaps
+
+Several test cases are currently skipped due to implementation issues:
+
+- **TOML parsing edge cases**: Tests for whitespace handling, quoted keys, and nested structures
+- **Error handling**: Malformed TOML files and invalid plugin specifications
+- **Integration tests**: Some integration tests need refactoring for better reliability
+
+### Workarounds
+
+- Use simple TOML structures when possible
+- Avoid complex string escaping in configuration files
+- Ensure consistent line endings (LF preferred)
+- Test configurations thoroughly before deployment
+
 ## License
 
 MIT
