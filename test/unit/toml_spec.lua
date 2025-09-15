@@ -120,9 +120,9 @@ Violets are blue"""
         assert.is.equal(result.sf1, 1 / 0)
         assert.is.equal(result.sf2, 1 / 0)
         assert.is.equal(result.sf3, -1 / 0)
-        assert.is.not_equal(result.sf4, result.sf4) -- The correct way to check for NaN
-        assert.is.not_equal(result.sf5, result.sf5)
-        assert.is.not_equal(result.sf6, result.sf6)
+        assert.is.no.equal(result.sf4, result.sf4) -- The correct way to check for NaN
+        assert.is.no.equal(result.sf5, result.sf5)
+        assert.is.no.equal(result.sf6, result.sf6)
       end)
     end)
 
@@ -263,9 +263,9 @@ Violets are blue"""
 
     it('errors on table redefinition', function()
       local toml_string = '[table]\n[table]'
-      assert.error_matches(
+      assert.error(
         function() toml.parse(toml_string) end,
-        'Redefinition of table `[table]` is not allowed'
+        'TOML Parse Error (line 3): Redefinition of table `[table]` is not allowed.'
       )
     end)
 
