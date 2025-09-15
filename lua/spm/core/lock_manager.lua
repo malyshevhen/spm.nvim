@@ -1,3 +1,31 @@
+--- Module for managing the lock file
+---
+--- The lock file is a TOML file that contains information about the plugins
+--- and their versions. It is used to ensure that the plugins installed by
+--- the plugin manager are compatible with the current configuration.
+---
+--- The lock file is read and written using the `spm.lib.toml` module.
+---
+--- The lock file is stored in the `spm.config.lock_file_path` directory.
+---
+--- The lock file is updated when the plugin manager is run with the
+--- `--update-lock` flag. This flag is used to update the lock file when
+--- the configuration has changed.
+---
+--- The lock file is also updated when the plugin manager is run with the
+--- `--install` flag. This flag is used to install the plugins specified in
+--- the configuration.
+---
+--- The lock file is also updated when the plugin manager is run with the
+--- `--debug` flag. This flag is used to show the flattened plugins without
+--- installing them.
+---
+--- The lock file is also updated when the plugin manager is run with the
+--- `--debug` flag. This flag is used to show the flattened plugins without
+--- installing them.
+---@module 'spm.core.lock_manager'
+local lock_manager = {}
+
 local crypto = require('spm.lib.crypto')
 local fs = require('spm.lib.fs')
 local logger = require('spm.lib.logger')
@@ -6,7 +34,7 @@ local toml = require('spm.lib.toml')
 ---Reads and parses the lock file
 ---@param lock_file_path string
 ---@return table?, string?
-local function read(lock_file_path)
+function lock_manager.read(lock_file_path)
   logger.debug(string.format('Reading lock file: %s', lock_file_path), 'LockManager')
   if vim.fn.filereadable(lock_file_path) ~= 1 then
     logger.debug('Lock file not found', 'LockManager')
@@ -28,7 +56,7 @@ end
 ---@param lock_file_path string
 ---@param lock_data table
 ---@return boolean?, string?
-local function write(lock_file_path, lock_data)
+function lock_manager.write(lock_file_path, lock_data)
   -- Create the directory if it doesn't exist
   local dir = vim.fn.fnamemodify(lock_file_path, ':h')
   if vim.fn.isdirectory(dir) == 0 then
@@ -67,7 +95,7 @@ end
 ---@param plugins_toml_content string
 ---@param lock_data table?
 ---@return boolean is_stale
-local function is_stale(plugins_toml_content, lock_data)
+function lock_manager.is_stale(plugins_toml_content, lock_data)
   logger.debug('Checking if lock file is stale', 'LockManager')
   if not lock_data or not lock_data.hash then
     logger.info('Lock file is stale: no lock data or hash found.', 'LockManager')
@@ -89,8 +117,4 @@ local function is_stale(plugins_toml_content, lock_data)
   return false
 end
 
-return {
-  read = read,
-  write = write,
-  is_stale = is_stale,
-}
+return lock_manager

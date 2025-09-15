@@ -76,7 +76,7 @@ describe('file_sourcer', function()
     file:close()
 
     local result, err =
-      file_sourcer.source_directory('test/fixtures/file_sourcer', { recursive = false })
+      file_sourcer:source_directory('test/fixtures/file_sourcer', { recursive = false })
     assert.is_nil(err)
     assert.is_table(result)
     assert.are.same(2, result.files_sourced)
@@ -92,7 +92,7 @@ describe('file_sourcer', function()
     file:close()
 
     local result, err =
-      file_sourcer.source_directory('test/fixtures/file_sourcer', { recursive = false })
+      file_sourcer:source_directory('test/fixtures/file_sourcer', { recursive = false })
     assert.is_nil(result)
     assert.is_string(err)
   end)

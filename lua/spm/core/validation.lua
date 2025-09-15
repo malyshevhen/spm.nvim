@@ -1,4 +1,4 @@
---- A type alias for the valid strings returned by Lua's `type()` function.
+--- A type enum for the valid strings returned by Lua's `type()` function.
 ---@alias spm.Schema.LuaType
 ---| '"string"'
 ---| '"number"'
@@ -16,8 +16,8 @@
 ---@field regex string? An optional regex pattern that the field's value must match. (Only applies to strings)
 ---@field enum any[]? An optional list of allowed values for the field.
 ---@field custom fun(value: any, data: table): (boolean, string?)? An optional custom validation function.
---- It receives the field's value and the full data table, and should return `true` on success,
---- or `false` and an error message on failure.
+---                  It receives the field's value and the full data table, and should return `true` on success,
+---                  or `false` and an error message on failure.
 
 --- Defines the structure of a full validation schema.
 --- It's a map where keys are field names and values are constraint definitions.

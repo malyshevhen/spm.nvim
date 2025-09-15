@@ -11,12 +11,11 @@
 --- - `delete_file`: Deletes a file
 --- - `mkdir`: Creates a directory
 --- - `rmdir`: Removes a directory
+---@module 'spm.lib.fs'
+local fs = {}
 
 local Path = require('plenary.path')
 local logger = require('spm.lib.logger')
-
----@class spm.fs
-local fs = {}
 
 ---@param path string
 ---@return boolean?, string?

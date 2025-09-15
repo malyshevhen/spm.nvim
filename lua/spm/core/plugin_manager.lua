@@ -1,3 +1,11 @@
+--- Module that orchestrates the plugin manager
+---
+--- The plugin manager is responsible for installing and configuring plugins.
+--- It is the main entry point for the plugin manager and is responsible for
+--- parsing the configuration, installing plugins, and managing the lock file.
+---@module 'spm.core.plugin_manager'
+local plugin_manager = {}
+
 local crypto = require('spm.lib.crypto')
 local file_sourcer = require('spm.lib.file_sourcer')
 local fs = require('spm.lib.fs')
@@ -133,7 +141,7 @@ local function source_configs(config_root, options)
 
   local function source_path(path, is_dir)
     if is_dir then
-      local result, err = file_sourcer.source_directory(path, options)
+      local result, err = file_sourcer:source_directory(path, options)
       if err or not result then
         overall_success = false
         logger.error('Failed to source directory ' .. path .. ': ' .. err, 'PluginManager')
@@ -180,7 +188,7 @@ end
 ---@param config spm.Config The full configuration object
 ---@param force_reinstall boolean? Whether to ignore the lock file and force reinstall
 ---@return boolean?, string?
-local function setup(config, force_reinstall)
+function plugin_manager.setup(config, force_reinstall)
   logger.info('--- Starting PluginManager Setup ---', 'PluginManager')
 
   local parsed_config, err = get_plugin_config(config, force_reinstall)
@@ -239,7 +247,7 @@ end
 ---Debug method to show parsed plugins without installing
 ---@param plugins_toml_path string Path to the plugins.toml file
 ---@return table?, string?
-local function debug_plugins(plugins_toml_path)
+function plugin_manager._debug_plugins(plugins_toml_path)
   -- Logs the flattened plugins
   local parsed_config, err = parse_config(plugins_toml_path)
   if err or not parsed_config then return nil, err end
@@ -260,7 +268,4 @@ local function debug_plugins(plugins_toml_path)
   return flattened_plugins
 end
 
-return {
-  setup = setup,
-  _debug_plugins = debug_plugins,
-}
+return plugin_manager

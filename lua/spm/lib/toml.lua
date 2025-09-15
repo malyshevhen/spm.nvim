@@ -1,10 +1,20 @@
+--- Module for marshalling and unmarshalling TOML data
+---
+--- This module provides functions for parsing and encoding TOML data.
+--- It is used by the plugin manager to read and write the lock file.
+---
+--- The `parse` function reads and parses a TOML file. It takes a string
+--- as an argument and returns a table or an error message.
+---
+--- The `encode` function encodes a Lua table to TOML format. It takes a
+--- table as an argument and returns a string or an error message.
+---@module 'spm.lib.toml'
+local toml = {}
+
 local encoder = require('spm.lib.toml.encoder')
 local logger = require('spm.lib.logger')
 local parser = require('spm.lib.toml.parser')
 local safe_call = require('spm.lib.util').safe_call
-
----@module 'toml'
-local toml = {}
 
 ---Reads and parses a TOML file
 ---

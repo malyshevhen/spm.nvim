@@ -1,7 +1,24 @@
-local logger = require('spm.lib.logger')
+--- Module for managing the plugin installation process
+---
+--- This module provides functions for installing plugins using the
+--- `vim.pack.add` function. It also provides a function for validating
+--- the vim.pack module.
+---
+--- The `install` function is the main entry point for the plugin installer.
+--- It takes a list of plugins and an optional options table as arguments.
+--- The plugins are validated using the `spm.core.plugin_types.PluginSpec`
+--- schema. If the validation fails, an error message is logged and the
+--- function returns `nil`.
+---
+--- The `validate_vim_pack` function checks if the vim.pack module is available.
+--- If it is not, an error message is logged and the function returns `nil`.
+---
+--- The `to_pack_spec` function converts a `spm.core.plugin_types.PluginSpec`
+--- to a `vim.pack.add` compatible format.
+---@module 'spm.core.plugin_installer'
+local plugin_installer = {}
 
----@class spm.Installer
-local installer = {}
+local logger = require('spm.lib.logger')
 
 ---@class spm.InstallerOptions
 ---@field confirm boolean Whether to ask user to confirm installation
@@ -38,7 +55,7 @@ end
 ---@param plugins spm.PluginSpec[] List of plugins to install
 ---@param options spm.InstallerOptions? Installation options
 ---@return boolean?, string?
-local function install(plugins, options)
+function plugin_installer.install(plugins, options)
   if not plugins or #plugins == 0 then
     return true -- Nothing to install is considered success
   end
@@ -62,6 +79,4 @@ local function install(plugins, options)
   return true
 end
 
-return {
-  install = install,
-}
+return plugin_installer

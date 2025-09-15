@@ -1,3 +1,6 @@
+--- Module providing utility functions
+---
+--- This module provides utility functions for working with the plugin manager.
 ---@module 'spm.lib.util'
 local util = {}
 
