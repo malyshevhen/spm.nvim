@@ -148,7 +148,31 @@ stylua lua/
 
 ### Phase 1: Core Stability (v0.2.0)
 
+- [ ] **Code Quality**
+  - [ ] Refactor large functions into smaller, testable units
+  - [ ] Improve validation function structure
+  - [ ] Clean up temporary lock file workarounds
+
+- [ ] **Error Handling Improvements**
+  - [ ] Enhanced plugin specification validation
+  - [ ] Improved error messages and debugging
+
+### Phase 2: Performance & Reliability (v0.3.0)
+
+- [ ] **User Commands**
+  - [ ] Add commands for plugin management (`:SPMList`, `:SPMUpdate`, etc.)
+  - [ ] Implement debugging commands
+  - [ ] Add status reporting functionality
+
+- [ ] **Async Operations**
+  - [ ] Move file system operations to async `vim.loop` flow
+  - [ ] Implement proper SHA256 hashing function
+  - [ ] Optimize plugin installation process
+
+### Phase 3: User Experience (v0.4.0)
+
 - [ ] **TOML Parser Fixes**
+  - [ ] Better malformed TOML file handling
   - [ ] Fix multiline basic strings and leading newline trimming
   - [ ] Implement proper string escaping sequences
   - [ ] Add CRLF line ending support
@@ -156,32 +180,7 @@ stylua lua/
   - [ ] Support quoted keys and special characters in keys
   - [ ] Handle nested table arrays correctly
 
-- [ ] **Error Handling Improvements**
-  - [ ] Better malformed TOML file handling
-  - [ ] Enhanced plugin specification validation
-  - [ ] Improved error messages and debugging
-
-### Phase 2: Performance & Reliability (v0.3.0)
-
-- [ ] **Async Operations**
-  - [ ] Move file system operations to async `vim.loop` flow
-  - [ ] Implement proper SHA256 hashing function
-  - [ ] Optimize plugin installation process
-
-- [ ] **Code Quality**
-  - [ ] Refactor large functions into smaller, testable units
-  - [ ] Improve validation function structure
-  - [ ] Clean up temporary lock file workarounds
-
-### Phase 3: User Experience (v0.4.0)
-
-- [ ] **User Commands**
-  - [ ] Add commands for plugin management (`:SPMList`, `:SPMUpdate`, etc.)
-  - [ ] Implement debugging commands
-  - [ ] Add status reporting functionality
-
 - [ ] **Configuration Enhancements**
-  - [ ] Support for plugin groups/categories
   - [ ] Conditional plugin loading
   - [ ] Better configuration validation feedback
 
@@ -193,9 +192,10 @@ stylua lua/
   - [ ] Support for plugin update channels
 
 - [ ] **Integration Features**
+  - [ ] Lazy loading of configuration files
   - [ ] Better LSP server management
   - [ ] Enhanced filetype detection
-  - [ ] Integration with external package managers
+  - [ ] Simple UI for plugin management and configuration
 
 ## Known Issues
 
