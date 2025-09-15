@@ -1,33 +1,149 @@
-# nvim-plugin-template
+# spm.nvim
 
-Neovim plugin template; includes automatic documentation generation from README, integration tests with Busted, and linting with Stylua
+A simple and efficient Neovim plugin manager written in Lua. SPM (Simple Plugin Manager) provides a declarative way to manage your Neovim plugins using TOML configuration files.
+
+## Features
+
+- **TOML Configuration**: Define plugins, language servers, and filetypes in a clean TOML format
+- **Lock File System**: Ensures reproducible plugin installations with hash-based locking
+- **Dependency Management**: Support for plugin dependencies
+- **Version Pinning**: Pin plugins to specific branches, tags, or commits
+- **Language Server Integration**: Configure LSP servers declaratively
+- **Custom Filetypes**: Define custom filetype mappings
+- **Built-in TOML Parser**: No external dependencies for configuration parsing
+- **Comprehensive Testing**: Full test suite with Busted
+
+## Prerequisites
+
+- Neovim >= 0.12.0
+
+## Installation
+
+### Using vim.pack
+
+```lua
+vim.pack.add({
+  src = 'https://github.com/malyshevhen/spm.nvim',
+})
+
+require('spm').setup()
+```
+
+### Manual Installation
+
+Clone the repository and add to your Neovim runtime path:
+
+```bash
+git clone https://github.com/malyshevhen/spm.nvim ~/.local/share/nvim/site/pack/spm/start/spm.nvim
+```
+
+## Configuration
+
+Create a `plugins.toml` file in your Neovim config directory:
+
+```toml
+[plugins]
+  # Basic plugin
+  { name = "alpha-nvim", src = "https://github.com/goolord/alpha-nvim" }
+
+  # Plugin with version pinning
+  { name = "neotest", src = "https://github.com/nvim-neotest/neotest", version = "v4.0.0" }
+
+  # Plugin with dependencies
+  {
+    name = "neotest",
+    src = "https://github.com/nvim-neotest/neotest",
+    dependencies = [
+      "https://github.com/nvim-lua/plenary.nvim"
+    ]
+  }
+
+[language_servers]
+  servers = ["lua_ls", "gopls", "tsserver"]
+
+[filetypes]
+  [filetypes.pattern]
+    "*.raml" = "raml"
+    "docker-compose*.yml" = "yaml.docker-compose"
+```
 
 ## Usage
 
-1. Click `use this template` button generate a repo on your github.
-2. Clone your plugin repo. Open terminal then cd plugin directory.
-3. Run `python3 rename.py your-plugin-name`. This will replace all `nvim-plugin-template` to your `plugin-name`. 
-   Then it will prompt you input `y` or `n` to remove example codes in `init.lua` and
-   `test/plugin_spec.lua`. If you are familiar this repo just input `y`. If you are looking at this template for the first time I suggest you inspect the contents. After this step `rename.py` will also auto-remove.
+### Basic Setup
 
-Now you have a clean plugin environment. Enjoy!
+```lua
+require('spm').setup({
+  plugins_toml_path = vim.fn.stdpath('config') .. '/plugins.toml',
+  lock_file_path = vim.fn.stdpath('config') .. '/plugins.lock',
+  debug_mode = false,
+  show_startup_messages = true,
+})
+```
 
-## Format
+### Configuration Options
 
-The CI uses `stylua` to format the code; customize the formatting by editing `.stylua.toml`.
+- `plugins_toml_path`: Path to your plugins.toml configuration file
+- `lock_file_path`: Path where the lock file will be stored
+- `debug_mode`: Enable debug logging
+- `show_startup_messages`: Show startup messages
 
-## Test
+### Keymap Integration
 
-See [Running tests locally](https://github.com/nvim-neorocks/nvim-busted-action?tab=readme-ov-file#running-tests-locally)
+SPM provides a keymap compatibility system:
 
-## CI
+```lua
+require('spm').keymaps({
+  { '<leader>ff', '<cmd>Telescope find_files<cr>', desc = 'Find files' },
+  { '<leader>fg', '<cmd>Telescope live_grep<cr>', desc = 'Live grep' },
+})
+```
 
-- Auto generates doc from README.
-- Runs the [nvim-busted-action](https://github.com/nvim-neorocks/nvim-busted-action) for test.
-- Lints with `stylua`.
+## Lock File System
 
-## More
+SPM uses a lock file to ensure reproducible installations:
 
-To see this template in action, take a look at my other plugins.
+- Automatically generated when plugins are installed
+- Contains plugin versions and configuration hash
+- Prevents unnecessary reinstallations when configuration hasn't changed
+- Can be manually updated with `force_reinstall = true`
 
-## License MIT
+## Testing
+
+Run the test suite:
+
+```bash
+make test
+```
+
+Or run specific test types:
+
+```bash
+make unit-test      # Run unit tests
+make automated-test # Run integration tests
+```
+
+## Development
+
+### Code Style
+
+- **Language**: Lua 5.4
+- **Formatting**: 2 spaces, 100 columns, Unix line endings
+- **Naming**: snake_case for functions/variables, PascalCase for modules
+- **Types**: EmmyLua annotations required
+- **Error handling**: Railway oriented programming pattern
+
+### Testing Framework
+
+Uses Busted for testing with custom Neovim integration.
+
+### Linting
+
+Code is formatted with Stylua. Run:
+
+```bash
+stylua lua/
+```
+
+## License
+
+MIT
