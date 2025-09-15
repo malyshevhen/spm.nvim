@@ -3,7 +3,7 @@ local crypto = require('spm.lib.crypto')
 local lock_manager = require('spm.core.lock_manager')
 
 describe('lock_manager', function()
-  local lock_file_path = 'test/fixtures/spm.lock'
+  local lock_file_path = 'test/spec/fixtures/spm.lock'
 
   after_each(function() os.remove(lock_file_path) end)
 

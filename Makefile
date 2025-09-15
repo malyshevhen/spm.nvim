@@ -11,11 +11,6 @@ PLUGIN_DIR=$(XDG_DATA_HOME)nvim/site/pack/testing/start
 
 BUSTED="./test/bin/busted"
 
-all:
-	@echo "Run 'make unit-test' and 'make automated-test'"
-	@($(MAKE) unit-test)
-	@($(MAKE) automated-test)
-
 setup: # Create a simlink of the tested plugin in the fake XDG config directory
 	@mkdir -p $(PLUGIN_DIR)
 	@ln -s $(PWD) $(PLUGIN_DIR)/$(PLUGIN_NAME)

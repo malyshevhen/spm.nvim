@@ -38,13 +38,12 @@ To run the automated tests, use the following command:
 make test
 ```
 
-This will run the `busted` tests located in the `test/automated/` directory.
+This will run the `busted` tests located in the `test/spec/automated/` directory.
 
 #### Testing Guidelines
 
-- **Test Framework:** The project uses `busted` as the test framework and `plenary.nvim` for test utilities and mocking.
-- **Test File Convention:** Test files should be placed in the `test/automated/` directory and named with a `_spec.lua` suffix (e.g., `my_module_spec.lua`).
-- **Fixtures:** Test data, such as sample `plugins.toml` files, are located in the `test/fixtures/` directory.
+- **Test File Convention:** Test files should be placed in the `test/spec/automated/` directory and named with a `_spec.lua` suffix (e.g., `my_module_spec.lua`).
+- **Fixtures:** Test data, such as sample `plugins.toml` files, are located in the `test/spec/fixtures/` directory.
 - **Coverage:** All new modules and significant changes to existing modules should be accompanied by corresponding tests to maintain code quality and prevent regressions.
 
 ## Development Conventions
@@ -52,4 +51,3 @@ This will run the `busted` tests located in the `test/automated/` directory.
 - **Formatting:** The project uses `stylua` for code formatting. The configuration can be found in `.stylua.toml`.
 - **Linting:** The project uses `luacheck` for linting, configured via `.luarc.json`.
 - **Testing:** The project uses `busted` for testing.
-
