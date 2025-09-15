@@ -12,7 +12,7 @@ local safe_call = require('spm.lib.util').safe_call
 function crypto.generate_hash(content)
   if type(content) ~= 'string' then return nil, 'Content must be a string' end
 
-  local hash, err = safe_call(vim.fn.sha256, content)
+  local hash, err = safe_call(vim.fn.sha256, content) -- TODO: implement SHA256 function
   if err then return nil, 'Failed to generate hash' end
 
   return hash

@@ -44,7 +44,7 @@ end
 
 ---Safely sources a single Lua file
 ---@param filepath string Path to the Lua file to source
----@return boolean?, string?
+---@return boolean?, string? Whether the operation was successful, and an error message if it failed
 function file_sourcer.source_lua_file(filepath)
   if vim.fn.filereadable(filepath) == 0 then
     return nil, string.format('File not readable: %s', filepath)

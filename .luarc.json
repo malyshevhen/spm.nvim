@@ -1,25 +1,14 @@
 {
-  "diagnostics.globals": [
-    "vim",
-    "describe",
-    "it",
-    "before_each",
-    "after_each",
-    "assert",
-    "pending",
-    "setup",
-    "teardown",
-    "clear"
-  ],
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime.path": ["?.lua"],
+  "diagnostics.globals": ["vim"],
+  "workspace.ignoreDir": ["test/xdg", ".git"],
+  "workspace.ignoreSubmodules": false,
+  "workspake.userThirdParty": [".luals/addons"],
   "workspace.library": [
-    "${3rd}/luv/library",
-    "${3rd}/busted/library",
-    "${3rd}/luassert/library"
+    ".luals/addons/luassert/library",
+    ".luals/meta",
+    ".luals/addons/busted/library"
   ],
-  "workspace.checkThirdParty": false,
-  "runtime.path": ["lua/?.lua", "lua/?/init.lua"],
-  "completion.enable": true,
-  "completion.keywordSnippet": "Replace",
-  "completion.callSnippet": "Replace",
-  "workspace.ignoreDir": [".git"]
+  "completion.enable": true
 }

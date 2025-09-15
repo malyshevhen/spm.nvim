@@ -23,4 +23,5 @@ jobs:
       - name: Run tests
         run: |
           nvim --version
-          make test
+          make unit-test
+          make automated-test

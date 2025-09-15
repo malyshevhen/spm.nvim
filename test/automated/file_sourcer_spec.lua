@@ -16,6 +16,7 @@ describe('file_sourcer', function()
 
     local ok, err = file_sourcer.source_lua_file('test/fixtures/file_sourcer/test.lua')
     assert.is_true(ok)
+    assert.is_nil(err)
   end)
 
   it('should return an error if the file is not readable', function()

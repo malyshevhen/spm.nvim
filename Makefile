@@ -1,13 +1,30 @@
-.PHONY: test test-toml test-encoder
+.PHONY: setup unit-test automated-test clean
 
-test:
-	git submodule update --init --recursive
-	nvim --headless --noplugin -u scripts/minimal_init.vim -c "PlenaryBustedDirectory test/automated/ { minimal_init = './scripts/minimal_init.vim' }"
-	nvim --headless --noplugin -u scripts/minimal_init.vim -c "PlenaryBustedDirectory test/toml/ { minimal_init = './scripts/minimal_init.vim' }"
+# variables
+XDG_CONFIG_HOME='test/xdg/config/'
+XDG_STATE_HOME='test/xdg/local/state/'
+XDG_DATA_HOME='test/xdg/local/share/'
 
-test-toml:
-	nvim --headless --noplugin -u scripts/minimal_init.vim -c "PlenaryBustedDirectory test/toml/spec/ { minimal_init = './scripts/minimal_init.vim' }"
+PLUGIN_DIR=$(XDG_DATA_HOME)/nvim/site/pack/testing/start/spm.nvim
 
-test-encoder:
-	nvim --headless --noplugin -u scripts/minimal_init.vim -c "PlenaryBustedDirectory test/toml/encoder/ { minimal_init = './scripts/minimal_init.vim' }"
+BUSTED="./test/bin/busted"
+
+all:
+	@echo "Run 'make unit-test' and 'make automated-test'"
+	@($(MAKE) unit-test)
+	@($(MAKE) automated-test)
+
+setup: # Create a simlink of the tested plugin in the fake XDG config directory
+	@ln -s $(PWD) $(PLUGIN_DIR)
+
+unit-test:
+	@($(MAKE) setup)
+	@(trap 'make clean' EXIT; $(BUSTED) --run unit)
+
+automated-test:
+	@($(MAKE) setup)
+	@(trap 'make clean' EXIT; $(BUSTED) --run automated)
+
+clean:
+	@rm -rf $(PLUGIN_DIR)
 
