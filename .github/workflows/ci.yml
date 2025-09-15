@@ -20,8 +20,20 @@ jobs:
           neovim: true
           version: ${{ matrix.rev }}
 
+      - name: Setup ‘lua’
+        uses: leafo/gh-actions-lua@v9
+        with:
+          luaVersion: "5.1"
+
+      - name: Setup ‘luarocks’
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Setup dependencies
+        run: |
+          luarocks install luacov
+          luarocks install busted
+
       - name: Run tests
         run: |
-          nvim --version
           make unit-test
           make automated-test
