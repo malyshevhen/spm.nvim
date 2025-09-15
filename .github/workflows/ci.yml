@@ -15,6 +15,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Verify submodules
+        run: git submodule status
 
       - uses: rhysd/action-setup-vim@v1
         with:
