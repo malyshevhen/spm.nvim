@@ -1,4 +1,5 @@
 local Config = require('spm.core.config')
+local assert = require('luassert')
 
 describe('Config', function()
   it('should create a default configuration if no user config is provided', function()

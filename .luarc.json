@@ -12,21 +12,12 @@
     "clear"
   ],
   "workspace.library": [
-    "./test/plenary.nvim/lua",
-    "./test/plenary.nvim/lua/plenary/_meta",
-    "${3rd}/luv/library"
+    "${3rd}/luv/library",
+    "${3rd}/busted/library",
+    "${3rd}/luassert/library"
   ],
   "workspace.checkThirdParty": false,
-  "runtime.path": [
-    "lua/?.lua",
-    "lua/?/init.lua",
-    "./test/plenary.nvim/lua/?.lua",
-    "./test/plenary.nvim/lua/?/init.lua",
-    "../plenary.nvim/lua/?.lua",
-    "../plenary.nvim/lua/?/init.lua",
-    "../../test/plenary.nvim/lua/?.lua",
-    "../../test/plenary.nvim/lua/?/init.lua"
-  ],
+  "runtime.path": ["lua/?.lua", "lua/?/init.lua"],
   "completion.enable": true,
   "completion.keywordSnippet": "Replace",
   "completion.callSnippet": "Replace",
