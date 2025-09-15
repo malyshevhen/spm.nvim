@@ -5,7 +5,7 @@ local lock_manager = require('spm.core.lock_manager')
 local logger = require('spm.lib.logger')
 local plugin_installer = require('spm.core.plugin_installer')
 local plugin_types = require('spm.core.plugin_types')
-local toml_parser = require('spm.lib.toml_parser')
+local toml = require('spm.lib.toml')
 local PluginConfig = plugin_types.PluginConfig
 
 ---Parses the plugins configuration file
@@ -20,7 +20,7 @@ local function parse_config(plugins_toml_path)
   end
   logger.debug('Successfully read plugins.toml', 'PluginManager')
 
-  local parsed_content, parse_err = toml_parser.parse(plugins_toml_content)
+  local parsed_content, parse_err = toml.parse(plugins_toml_content)
   if parse_err then
     logger.error('Failed to parse plugins.toml', 'PluginManager')
     return nil, parse_err

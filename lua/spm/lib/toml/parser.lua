@@ -19,7 +19,7 @@
 ---
 --- Usage:
 ---    local toml = require("toml")
----    local toml_string = [[
+---    local toml_string = [=[
 ---        # This is a TOML document.
 ---        title = "TOML Example"
 ---
@@ -42,7 +42,7 @@
 ---        name = "Nail"
 ---        sku = 284758393
 ---        color = "gray"
----    ]]
+---    ]=]
 ---
 ---    local success, data_or_error = pcall(toml.parse, toml_string)
 ---

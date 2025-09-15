@@ -1,7 +1,7 @@
 local crypto = require('spm.lib.crypto')
 local fs = require('spm.lib.fs')
 local logger = require('spm.lib.logger')
-local toml_parser = require('spm.lib.toml_parser')
+local toml = require('spm.lib.toml')
 
 ---Reads and parses the lock file
 ---@param lock_file_path string
@@ -21,7 +21,7 @@ local function read(lock_file_path)
     return {}
   end
 
-  return toml_parser.parse(content)
+  return toml.parse(content)
 end
 
 ---Writes data to the lock file
@@ -49,7 +49,7 @@ local function write(lock_file_path, lock_data)
   -- Read the lock data
   logger.debug(string.format('Writing to lock file: %s', lock_file_path), 'LockManager')
 
-  local encoded_data, err = toml_parser.encode(lock_data)
+  local encoded_data, err = toml.encode(lock_data)
   if err or not encoded_data then
     logger.error('Failed to encode lock data', 'LockManager')
     return nil, err

@@ -1,7 +1,7 @@
 local Path = require('plenary.path')
 local uv = vim.loop
 
-local crypto, fs, lock_manager, plugin_types, toml_parser, PluginConfig
+local crypto, fs, lock_manager, plugin_types, toml, PluginConfig
 
 -- Helper function to convert plain table to PluginConfig
 local function create_plugin_config(data)
@@ -26,12 +26,12 @@ describe('plugin_manager integration', function()
     package.loaded['spm.lib.fs'] = nil
     package.loaded['spm.lib.util'] = nil
     package.loaded['spm.lib.toml'] = nil
-    package.loaded['spm.lib.toml.parser'] = nil
+    package.loaded['spm.lib.toml'] = nil
     package.loaded['spm.lib.toml.encoder'] = nil
     package.loaded['spm.core.plugin_types'] = nil
 
     -- Reload modules with fresh state
-    toml_parser = require('spm.lib.toml_parser')
+    toml = require('spm.lib.toml')
     lock_manager = require('spm.core.lock_manager')
     crypto = require('spm.lib.crypto')
     fs = require('spm.lib.fs')
@@ -79,7 +79,7 @@ describe('plugin_manager integration', function()
   local function parse_plugins_toml(path)
     local content, err = fs.read_file(path)
     if err then return nil, err end
-    return toml_parser.parse(content)
+    return toml.parse(content)
   end
 
   -- Helper function to setup standard test configuration
