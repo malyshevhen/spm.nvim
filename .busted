@@ -8,9 +8,14 @@ return {
     verbose = true,
   },
   automated = {
-    ROOT = { 'test/automated' },
+    ROOT = { 'test/spec/automated' },
   },
   unit = {
-    ROOT = { 'test/unit' },
+    ROOT = { 'test/spec/unit' },
+  },
+  all = {
+    ROOT = { 'test/spec' },
+    output = 'gtest',
+    verbose = true,
   },
 }

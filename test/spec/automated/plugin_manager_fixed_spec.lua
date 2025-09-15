@@ -285,7 +285,7 @@ servers = ["lua_ls", "gopls"]
       assert.is_string(err)
     end)
 
-    it('should handle malformed TOML files #skip', function() -- TODO: fix this
+    it('should handle malformed TOML files #skip', function() -- FIXME: fix this
       local content = '[[plugins]\nname = "broken"\n' -- Missing closing bracket
       local test_plugins_toml_path = create_temp_file(content)
 
@@ -294,7 +294,7 @@ servers = ["lua_ls", "gopls"]
       assert.is_string(err)
     end)
 
-    it('should validate plugin specifications #skip', function() -- TODO: fix this
+    it('should validate plugin specifications #skip', function() -- FIXME: fix this
       local content = [==[
 [[plugins]]
 name = "invalid-plugin"

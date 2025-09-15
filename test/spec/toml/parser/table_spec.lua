@@ -23,7 +23,7 @@ describe('table', function()
     assert.same(sol, obj)
   end)
 
-  it('whitespace #skip', function() -- TODO: fix this
+  it('whitespace #skip', function() -- FIXME: fix this
     local obj = TOML.parse([=[
 [a.b.c]
 key = "value"
@@ -59,7 +59,7 @@ key = "value"]=])
     assert.same(sol, obj)
   end)
 
-  it('quoted #skip', function() -- TODO: fix this
+  it('quoted #skip', function() -- FIXME: fix this
     local obj = TOML.parse([=[
 [dog."tater.man"]
 type = "pug"]=])

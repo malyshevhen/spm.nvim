@@ -40,7 +40,7 @@ answer=42]=])
     assert.same(sol, obj)
   end)
 
-  it('special chars #skip', function() -- TODO: fix this
+  it('special chars #skip', function() -- FIXME: fix this
     local obj = TOML.parse([=[
 "~!@$^&*()_+-`1234567890[]|/?><.,;:'" = 1
 		]=])

@@ -75,7 +75,7 @@ describe('plugin_types', function()
 
     it(
       'should return an error if any of the plugins are invalid #skip',
-      function() -- TODO: fix this
+      function() -- FIXME: fix this
         local invalid_config = {
           plugins = {
             {

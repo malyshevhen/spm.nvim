@@ -40,7 +40,7 @@ last_name = "Seger"]=])
     assert.same(sol, obj)
   end)
 
-  it('nest #skip', function() -- TODO: fix this
+  it('nest #skip', function() -- FIXME: fix this
     local obj = TOML.parse([=[
 [[albums]]
 name = "Born to Run"

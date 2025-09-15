@@ -53,7 +53,7 @@ describe('TOML Parser', function()
       end)
 
       it(
-        'parses multiline basic strings and trims the first newline #skip', -- TODO: fix this
+        'parses multiline basic strings and trims the first newline #skip', -- FIXME: fix this
         function()
           local toml_string = [[
           str = """
