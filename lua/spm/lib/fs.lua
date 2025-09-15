@@ -14,8 +14,18 @@
 ---@module 'spm.lib.fs'
 local fs = {}
 
-local Path = require('plenary.path')
 local logger = require('spm.lib.logger')
+
+---@param path string
+---@return boolean
+local function file_exists(path)
+  local f = io.open(path, 'r')
+  if f then
+    f:close()
+    return true
+  end
+  return false
+end
 
 ---@param path string
 ---@return boolean?, string?
@@ -23,10 +33,9 @@ function fs.delete_file(path)
   logger.debug(string.format('Deleting file: %s', path), 'fs')
   if not path or type(path) ~= 'string' then return nil, 'Invalid path' end
 
-  local p = Path:new(path)
-  if not p:exists() then return nil, 'File does not exist' end
+  if not file_exists(path) then return nil, 'File does not exist' end
 
-  local success, err = pcall(function() return p:rm() end)
+  local success, err = pcall(function() return os.remove(path) end)
   if success then
     return true
   else
@@ -77,8 +86,12 @@ function fs.write_file(path, content)
 
   if not content or type(content) ~= 'string' then return nil, 'Invalid content' end
 
-  local p = Path:new(path)
-  local success, err = pcall(function() return p:write(content, 'w') end)
+  local success, err = pcall(function()
+    local f = io.open(path, 'w')
+    if not f then error('Could not open file for writing') end
+    f:write(content)
+    f:close()
+  end)
   if success then
     return true
   else
@@ -92,10 +105,15 @@ function fs.read_file(path)
   logger.debug(string.format('Reading file: %s', path), 'fs')
   if not path or type(path) ~= 'string' then return nil, 'Invalid path' end
 
-  local p = Path:new(path)
-  if not p:exists() then return nil, 'File does not exist' end
+  if not file_exists(path) then return nil, 'File does not exist' end
 
-  local success, content = pcall(function() return p:read() end)
+  local success, content = pcall(function()
+    local f = io.open(path, 'r')
+    if not f then error('Could not open file for reading') end
+    local data = f:read('*a')
+    f:close()
+    return data
+  end)
   if success then
     return content
   else

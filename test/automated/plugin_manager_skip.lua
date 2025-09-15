@@ -1,10 +1,9 @@
-local Result = require('spm.lib.error').Result
-local crypto = require('spm.lib.crypto')
-local lock_manager = require('spm.core.lock_manager')
-local plugin_types = require('spm.core.plugin_types')
-local toml_parser = require('spm.lib.toml_parser')
-local PluginConfig = plugin_types.PluginConfig
-local Path = require('plenary.path')
+ local Result = require('spm.lib.error').Result
+ local crypto = require('spm.lib.crypto')
+ local lock_manager = require('spm.core.lock_manager')
+ local plugin_types = require('spm.core.plugin_types')
+ local toml_parser = require('spm.lib.toml_parser')
+ local PluginConfig = plugin_types.PluginConfig
 
 -- Helper function to convert plain table to PluginConfig
 local function create_plugin_config(data)
@@ -16,15 +15,21 @@ describe('plugin_manager integration', function()
   local files_to_clean = {}
 
   local function create_temp_file(content)
-    local temp_file = Path:new(vim.fn.tempname())
-    if content then temp_file:write(content, 'w') end
-    table.insert(files_to_clean, temp_file)
-    return temp_file.filename
+    local temp_file_path = vim.fn.tempname()
+    if content then
+      local file = io.open(temp_file_path, 'w')
+      if file then
+        file:write(content)
+        file:close()
+      end
+    end
+    table.insert(files_to_clean, temp_file_path)
+    return temp_file_path
   end
 
   after_each(function()
-    for _, file in ipairs(files_to_clean) do
-      local success, err = pcall(function() file:rm() end)
+    for _, file_path in ipairs(files_to_clean) do
+      local success, err = pcall(function() os.remove(file_path) end)
       if not success then print('Failed to clean up file: ' .. tostring(err)) end
     end
     files_to_clean = {}

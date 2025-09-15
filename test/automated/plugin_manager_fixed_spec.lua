@@ -1,4 +1,3 @@
-local Path = require('plenary.path')
 local uv = vim.loop
 
 local crypto, fs, lock_manager, plugin_types, toml, PluginConfig
@@ -16,8 +15,8 @@ describe('plugin_manager integration', function()
   before_each(function()
     -- Initialize clean test environment
     test_env.files_to_clean = {}
-    test_env.temp_dir = Path:new(vim.fn.tempname() .. '_test_dir')
-    test_env.temp_dir:mkdir()
+    test_env.temp_dir = vim.fn.tempname() .. '_test_dir'
+    vim.uv.fs_mkdir(test_env.temp_dir, 448)
 
     -- Clear any module caches to prevent state leakage
     package.loaded['spm.lib.toml_parser'] = nil
@@ -41,9 +40,9 @@ describe('plugin_manager integration', function()
 
   after_each(function()
     -- Clean up files with proper error handling
-    for _, path_obj in ipairs(test_env.files_to_clean) do
+    for _, file_path in ipairs(test_env.files_to_clean) do
       local success, err = pcall(function()
-        if path_obj:exists() then path_obj:rm() end
+        os.remove(file_path)
       end)
       if not success then
         print('Failed to clean up file: ' .. tostring(err))
@@ -52,8 +51,8 @@ describe('plugin_manager integration', function()
     end
 
     -- Clean up temp directory
-    if test_env.temp_dir and test_env.temp_dir:exists() then
-      local success, err = pcall(function() test_env.temp_dir:rmdir() end)
+    if test_env.temp_dir then
+      local success, err = pcall(function() vim.uv.fs_rmdir(test_env.temp_dir) end)
       if not success then
         print('Failed to clean up temp directory: ' .. tostring(err))
         error(err)
@@ -65,15 +64,19 @@ describe('plugin_manager integration', function()
   end)
 
   local function create_temp_file(content)
-    local temp_file = test_env.temp_dir / ('test_' .. #test_env.files_to_clean .. '.toml')
+    local temp_file_path = test_env.temp_dir .. '/test_' .. #test_env.files_to_clean .. '.toml'
     if content then
-      temp_file:write(content, 'w')
-      -- Ensure file is written and closed properly
-      local fd = assert(uv.fs_open(temp_file.filename, 'r', 438))
-      uv.fs_fsync(fd) -- Force write to disk
+      local f = io.open(temp_file_path, 'w')
+      if f then
+        f:write(content)
+        f:close()
+        -- Ensure file is written and closed properly
+        local fd = assert(uv.fs_open(temp_file_path, 'r', 438))
+        uv.fs_fsync(fd) -- Force write to disk
+      end
     end
-    table.insert(test_env.files_to_clean, temp_file) -- Store Path object
-    return temp_file.filename
+    table.insert(test_env.files_to_clean, temp_file_path) -- Store file path
+    return temp_file_path
   end
 
   local function parse_plugins_toml(path)

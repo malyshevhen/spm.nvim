@@ -1,4 +1,3 @@
-local Path = require('plenary.path')
 local spm = require('spm')
 
 describe('spm.init', function()
@@ -6,8 +5,8 @@ describe('spm.init', function()
 
   before_each(function()
     test_env.files_to_clean = {}
-    test_env.temp_dir = Path:new(vim.fn.tempname() .. '_spm_test')
-    test_env.temp_dir:mkdir()
+    test_env.temp_dir = vim.fn.tempname() .. '_spm_test'
+    vim.uv.fs_mkdir(test_env.temp_dir, 448)
 
     -- Clear module caches to prevent state leakage
     package.loaded['spm'] = nil
@@ -22,21 +21,27 @@ describe('spm.init', function()
 
   after_each(function()
     -- Clean up files
-    for _, path_obj in ipairs(test_env.files_to_clean) do
-      if path_obj:exists() then path_obj:rm() end
+    for _, file_path in ipairs(test_env.files_to_clean) do
+      os.remove(file_path)
     end
 
     -- Clean up temp directory
-    if test_env.temp_dir and test_env.temp_dir:exists() then test_env.temp_dir:rmdir() end
+    if test_env.temp_dir then vim.uv.fs_rmdir(test_env.temp_dir) end
 
     test_env = {}
   end)
 
   local function create_temp_file(content)
-    local temp_file = test_env.temp_dir / ('test_' .. #test_env.files_to_clean .. '.toml')
-    if content then temp_file:write(content, 'w') end
-    table.insert(test_env.files_to_clean, temp_file)
-    return temp_file.filename
+    local temp_file_path = test_env.temp_dir .. '/test_' .. #test_env.files_to_clean .. '.toml'
+    if content then
+      local f = io.open(temp_file_path, 'w')
+      if f then
+        f:write(content)
+        f:close()
+      end
+    end
+    table.insert(test_env.files_to_clean, temp_file_path)
+    return temp_file_path
   end
 
   describe('spm table structure', function()
@@ -78,16 +83,22 @@ src = "https://github.com/test/plugin"
       local default_lock = vim.fn.stdpath('data') .. '/spm.lock'
 
       -- Ensure files exist for test
-      local plugins_file = Path:new(default_plugins)
-      if not plugins_file:exists() then
-        plugins_file:write('', 'w')
-        table.insert(test_env.files_to_clean, plugins_file)
+      if not vim.uv.fs_stat(default_plugins) then
+        local f = io.open(default_plugins, 'w')
+        if f then
+          f:write('')
+          f:close()
+          table.insert(test_env.files_to_clean, default_plugins)
+        end
       end
 
-      local lock_file = Path:new(default_lock)
-      if not lock_file:exists() then
-        lock_file:write('', 'w')
-        table.insert(test_env.files_to_clean, lock_file)
+      if not vim.uv.fs_stat(default_lock) then
+        local f = io.open(default_lock, 'w')
+        if f then
+          f:write('')
+          f:close()
+          table.insert(test_env.files_to_clean, default_lock)
+        end
       end
 
       -- This should not error
