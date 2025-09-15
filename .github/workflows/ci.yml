@@ -33,7 +33,6 @@ jobs:
         run: |
           luarocks install luacov
           luarocks install busted
-          luarocks make
 
       - name: Run tests
         run: |
